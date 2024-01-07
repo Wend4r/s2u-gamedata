@@ -30,8 +30,8 @@ extern IVEngineServer *engine;
 extern IFileSystem *filesystem;
 extern IServerGameDLL *server;
 
-CModule g_aLibEngine, 
-        g_aLibServer;
+DynLibUtils::CModule g_aLibEngine, 
+                     g_aLibServer;
 
 bool GameData::Init(char *psError, size_t nMaxLength)
 {
@@ -70,7 +70,7 @@ void GameData::Destroy()
 	// ...
 }
 
-const CModule *GameData::FindLibrary(std::string sName) const
+const DynLibUtils::CModule *GameData::FindLibrary(std::string sName) const
 {
 	auto itResult = this->m_aLibraryMap.find(sName);
 
@@ -233,9 +233,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues *pSignat
 
 			if(bResult)
 			{
-				const char *pszLibraryName = pLibraryValues->GetString(nullptr, "unknown");
+				const char *pszLibraryName = pLibraryValues->GetString(NULL, "unknown");
 
-				const CModule *pLibModule = pRoot->FindLibrary(pszLibraryName);
+				const auto pLibModule = pRoot->FindLibrary(pszLibraryName);
 
 				bResult = (bool)pLibModule;
 
@@ -247,9 +247,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues *pSignat
 
 					if(pPlatformValues)
 					{
-						const char *pszSignature = pPlatformValues->GetString(nullptr);
+						const char *pszSignature = pPlatformValues->GetString();
 
-						CMemory pSigResult = pLibModule->FindPatternSIMD(pszSignature);
+						const auto pSigResult = pLibModule->FindPattern(pszSignature);
 
 						bResult = (bool)pSigResult;
 
@@ -352,11 +352,11 @@ bool GameData::Config::LoadEngineAddresses(KeyValues *pAddressesValues, char *ps
 			{
 				const char *pszSignatureName = pSignatureValues->GetString();
 
-				CMemory pSigAddress = this->GetAddress(pszSignatureName);
+				const auto &aSigAddress = this->GetAddress(pszSignatureName);
 
-				if(pSigAddress)
+				if(aSigAddress)
 				{
-					uintptr_t pAddrCur = pSigAddress.GetPtr();
+					uintptr_t pAddrCur = aSigAddress.GetPtr();
 
 					// Remove an extra keys.
 					{
@@ -456,7 +456,7 @@ bool GameData::Config::LoadEngineAddressActions(uintptr_t &pAddrCur, KeyValues *
 	return bResult;
 }
 
-const CMemory &GameData::Config::GetAddress(std::string sName) const
+const DynLibUtils::CMemory &GameData::Config::GetAddress(std::string sName) const
 {
 	return this->m_aAddressStorage.Get(sName);
 }
@@ -466,7 +466,7 @@ const ptrdiff_t &GameData::Config::GetOffset(std::string sName) const
 	return this->m_aOffsetStorage.Get(sName);
 }
 
-void GameData::Config::SetAddress(std::string sName, CMemory aMemory)
+void GameData::Config::SetAddress(std::string sName, DynLibUtils::CMemory aMemory)
 {
 	this->m_aAddressStorage.Set(sName, aMemory);
 }

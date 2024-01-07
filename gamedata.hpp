@@ -9,8 +9,9 @@
 #ifndef _INCLUDE_GAMEDATA_HPP_
 #define _INCLUDE_GAMEDATA_HPP_
 
-#include "memory_utils/module.h"
-#include "memory_utils/memaddr.h"
+// DynLibUtils
+#include <memory_utils/module.h>
+#include <memory_utils/memaddr.h>
 
 #include <stddef.h>
 
@@ -25,7 +26,7 @@ class KeyValues;
 class IGameData
 {
 public:
-	virtual const CModule *FindLibrary(std::string sName) const = 0;
+	virtual const DynLibUtils::CModule *FindLibrary(std::string sName) const = 0;
 };
 
 class GameData : public IGameData
@@ -38,7 +39,7 @@ public:
 	void Destroy();
 
 public: // IGameData
-	const CModule *FindLibrary(std::string sName) const;
+	const DynLibUtils::CModule *FindLibrary(std::string sName) const;
 
 protected:
 	static const char *GetSourceEngineName();
@@ -310,7 +311,7 @@ public:
 		};
 
 	public:
-		using Addresses = Storage<std::string, CMemory>;
+		using Addresses = Storage<std::string, DynLibUtils::CMemory>;
 		using Offsets = Storage<std::string, ptrdiff_t>;
 
 	public:
@@ -338,11 +339,11 @@ public:
 		bool LoadEngineAddressActions(uintptr_t &pAddrCur, KeyValues *pActionValues, char *psError = NULL, size_t nMaxLength = 0);
 
 	public:
-		const CMemory &GetAddress(std::string sName) const;
+		const DynLibUtils::CMemory &GetAddress(std::string sName) const;
 		const ptrdiff_t &GetOffset(std::string sName) const;
 
 	protected:
-		void SetAddress(std::string sName, CMemory aMemory);
+		void SetAddress(std::string sName, DynLibUtils::CMemory aMemory);
 		void SetOffset(std::string sName, ptrdiff_t nValue);
 
 	private:
@@ -351,7 +352,7 @@ public:
 	};
 
 private:
-	std::map<std::string, const CModule *> m_aLibraryMap;
+	std::map<std::string, const DynLibUtils::CModule *> m_aLibraryMap;
 };
 
 #endif //_INCLUDE_GAMEDATA_HPP_
