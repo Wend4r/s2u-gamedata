@@ -27,7 +27,7 @@ class IGameData
 {
 public:
 	virtual const DynLibUtils::CModule *FindLibrary(std::string sName) const = 0;
-};
+}; // IGameData
 
 class GameData : public IGameData
 {
@@ -59,7 +59,7 @@ protected:
 		PLAT_MAC64,
 
 		PLAT_MAX
-	};
+	}; // GameData::Platform
 
 	inline static Platform GetCurrentPlatform();
 	inline static const char *GetCurrentPlatformName();
@@ -81,7 +81,7 @@ public:
 			{
 			public:
 				virtual void OnChanged(const K &aKey, const V &aValue) = 0;
-			};
+			}; // GameData::Config::Storage::IListener
 
 			Storage() = default;
 			Storage(IListener *pFirstListener)
@@ -110,7 +110,7 @@ public:
 
 			protected:
 				std::unordered_map<K, T> m_mapCallbacks;
-			};
+			}; // GameData::Config::Storage::BaseListenerCollector
 
 			class ListenerCallbacksCollector : public BaseListenerCollector<OnCollectorChangedCallback>
 			{
@@ -155,7 +155,7 @@ public:
 						(it->second)(aKey, aValue);
 					}
 				}
-			};
+			}; // GameData::Config::Storage::ListenerCallbacksCollector
 
 			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<std::vector<OnCollectorChangedCallback>>
 			{
@@ -232,7 +232,7 @@ public:
 						}
 					}
 				}
-			};
+			}; // GameData::Config::Storage::ListenerMultipleCallbacksCollector
 		
 		public:
 			void ClearValues()
@@ -308,7 +308,7 @@ public:
 		private:
 			std::map<K, V> m_mapValues;
 			std::vector<IListener *> m_vecListeners;
-		};
+		}; // GameData::Config::Storage
 
 	public:
 		using Addresses = Storage<std::string, DynLibUtils::CMemory>;
@@ -349,10 +349,10 @@ public:
 	private:
 		Addresses m_aAddressStorage;
 		Offsets m_aOffsetStorage;
-	};
+	}; // GameData::Config
 
 private:
 	std::map<std::string, const DynLibUtils::CModule *> m_aLibraryMap;
-};
+}; // GameData
 
 #endif //_INCLUDE_GAMEDATA_HPP_
