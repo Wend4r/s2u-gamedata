@@ -122,12 +122,12 @@ public:
 				ListenerCallbacksCollector() = default;
 
 			public: // BaseListenerCollector<>
-				void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback)
+				void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) override
 				{
 					this->m_mapCallbacks[aKey] = funcCallback;
 				}
 
-				bool Remove(const K &aKey)
+				bool Remove(const K &aKey) override
 				{
 					auto &map = this->m_mapCallbacks;
 
@@ -166,7 +166,8 @@ public:
 			public:
 				ListenerMultipleCallbacksCollector() = default;
 
-				void Insert(const K &aKey, const std::vector<OnCollectorChangedCallback> &vecCallbacks) // Adapter.
+				// Adapter.
+				void Insert(const K &aKey, const std::vector<OnCollectorChangedCallback> &vecCallbacks) override
 				{
 					auto &map = this->m_mapCallbacks;
 
@@ -183,7 +184,7 @@ public:
 				}
 
 			public: // BaseListenerCollector<>
-				void Insert(K aKey, OnCollectorChangedCallback funcCallback)
+				void Insert(K aKey, OnCollectorChangedCallback funcCallback) override
 				{
 					auto &map = this->m_mapCallbacks;
 
@@ -216,7 +217,7 @@ public:
 				}
 
 			public: // IListener
-				void OnChanged(const K &aKey, const V &aValue)
+				void OnChanged(const K &aKey, const V &aValue) override
 				{
 					auto &map = this->m_mapCallbacks;
 
