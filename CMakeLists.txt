@@ -21,6 +21,9 @@ if(NOT SOURCESDK_DIR)
 	set(SOURCESDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../hl2sdk-wend4r/hl2sdk-cs2)
 endif()
 
+set(INCLUDE_DIR "include")
+set(SOURCE_DIR "src")
+
 include("cmake/platform/shared.cmake")
 
 if(LINUX)
@@ -32,8 +35,12 @@ endif()
 include("cmake/dynlibutils.cmake")
 include("cmake/sourcesdk.cmake")
 
+include_directories(
+	${INCLUDE_DIR}
+)
+
 set(SOURCE_FILES
-	gamedata.cpp
+	${SOURCE_DIR}/gamedata.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
