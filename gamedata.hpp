@@ -10,8 +10,8 @@
 #define _INCLUDE_GAMEDATA_HPP_
 
 // DynLibUtils
-#include <memory_utils/module.h>
-#include <memory_utils/memaddr.h>
+#include <module.hpp>
+#include <memaddr.hpp>
 
 #include <stddef.h>
 
