@@ -35,13 +35,10 @@ endif()
 include("cmake/dynlibutils.cmake")
 include("cmake/sourcesdk.cmake")
 
-include_directories(
-	${INCLUDE_DIR}
-)
-
 set(SOURCE_FILES
 	${SOURCE_DIR}/gamedata.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE memory_utils ${SOURCESDK_LIBRARIES})
