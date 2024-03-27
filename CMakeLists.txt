@@ -12,7 +12,7 @@ project(gamedata
 )
 
 if(NOT DYNLIBUTILS_DIR)
-	message(WARNING "DYNLIBUITLS_DIR is empty")
+	message(WARNING "DYNLIBUTILS_DIR is empty")
 	set(DYNLIBUTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../memory_utils)
 endif()
 
