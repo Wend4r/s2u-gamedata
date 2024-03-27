@@ -40,5 +40,5 @@ set(SOURCE_FILES
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} PRIVATE memory_utils ${SOURCESDK_LIBRARIES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR} ${DYNLIBUTILS_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${DYNLIBUTILS_BINARY_DIR} ${SOURCESDK_LIBRARIES})
