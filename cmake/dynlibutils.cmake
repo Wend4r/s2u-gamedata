@@ -6,6 +6,6 @@ set(DYNLIBUTILS_INCLUDE_DIR
 	${DYNLIBUTILS_DIR}/include
 )
 
-set(DYNLIBUTILS_BINARY_DIR dynlibutils)
+set(DYNLIBUTILS_BINARY_DIR memory_utils)
 
 add_subdirectory("${DYNLIBUTILS_DIR}" ${DYNLIBUTILS_BINARY_DIR})
