@@ -12,10 +12,13 @@ else()
 	message(FATAL_ERROR "${SIZEOF_BITS}-bit platform is not supported")
 endif()
 
-if(LINUX)
-	add_definitions(
-		-D_LINUX -DPOSIX -DLINUX -DCOMPILER_GCC
+set(SOURCESDK_DEFINTIONS)
 
+if(LINUX)
+	set(SOURCESDK_DEFINTIONS
+		${SOURCESDK_DEFINTIONS}
+
+		-D_LINUX -DPOSIX -DLINUX -DCOMPILER_GCC
 		-D_GLIBCXX_USE_CXX11_ABI=0
 		-Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp
 		-Dstrnicmp=strncasecmp -D_snprintf=snprintf
@@ -24,13 +27,14 @@ if(LINUX)
 endif()
 
 if(MSVC)
-	add_definitions(
+	set(SOURCESDK_DEFINTIONS
+		${SOURCESDK_DEFINTIONS}
+
 		-DCOMPILER_MSVC -DCOMPILER_MSVC64
 	)
 endif()
 
-
-include_directories(
+set(SOURCESDK_INCLUDE_DIR
 	${SOURCESDK_DIR}/common
 	${SOURCESDK_DIR}/game/shared
 	${SOURCESDK_DIR}/game/server
