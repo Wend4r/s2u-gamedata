@@ -11,14 +11,3 @@ set(COMPILER_OPTIONS
 )
 
 set(LINKER_OPTIONS)
-
-include(CheckCCompilerFlag)
-
-check_c_compiler_flag("-fPIC" COMPILER_SUPPORTS_FPIC)
-
-if(COMPILER_SUPPORTS_FPIC)
-	set(COMPILER_OPTIONS
-		${COMPILER_OPTIONS}
-		-fPIC
-	)
-endif()
