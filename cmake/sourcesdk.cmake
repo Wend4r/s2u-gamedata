@@ -19,7 +19,6 @@ if(LINUX)
 		${SOURCESDK_DEFINTIONS}
 
 		-D_LINUX -DPOSIX -DLINUX -DCOMPILER_GCC
-		-D_GLIBCXX_USE_CXX11_ABI=0
 		-Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp
 		-Dstrnicmp=strncasecmp -D_snprintf=snprintf
 		-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp
