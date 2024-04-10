@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include <tier0/keyvalues.h>
+#include <tier0/platform.h>
 
 // Windows: linkage corresponds to a final class type.
 #ifdef META_IS_SOURCE2
@@ -26,9 +27,8 @@ class IFileSystem;
 class IServerGameDLL;
 #endif
 
-extern IVEngineServer *engine;
-extern IFileSystem *filesystem;
-extern IServerGameDLL *server;
+DLL_IMPORT IVEngineServer *engine;
+DLL_IMPORT IServerGameDLL *server;
 
 DynLibUtils::CModule g_aLibEngine, 
                      g_aLibServer;
