@@ -9,9 +9,8 @@
 #ifndef _INCLUDE_GAMEDATA_HPP_
 #define _INCLUDE_GAMEDATA_HPP_
 
-// DynLibUtils
-#include <module.hpp>
-#include <memaddr.hpp>
+#include <dynlibutils/module.hpp>
+#include <dynlibutils/memaddr.hpp>
 
 #include <stddef.h>
 
