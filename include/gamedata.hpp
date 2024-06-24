@@ -352,12 +352,12 @@ public:
 		bool LoadEngineAddressActions(uintptr_t &pAddrCur, KeyValues *pActionValues, char *psError = NULL, size_t nMaxLength = 0);
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(std::string sName) const;
-		const ptrdiff_t &GetOffset(std::string sName) const;
+		const DynLibUtils::CMemory &GetAddress(const std::string &sName) const;
+		const ptrdiff_t &GetOffset(const std::string &sName) const;
 
 	protected:
-		void SetAddress(std::string sName, DynLibUtils::CMemory aMemory);
-		void SetOffset(std::string sName, ptrdiff_t nValue);
+		void SetAddress(const std::string &sName, DynLibUtils::CMemory aMemory);
+		void SetOffset(const std::string &sName, ptrdiff_t nValue);
 
 	private:
 		Addresses m_aAddressStorage;

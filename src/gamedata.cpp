@@ -469,22 +469,22 @@ bool GameData::Config::LoadEngineAddressActions(uintptr_t &pAddrCur, KeyValues *
 	return bResult;
 }
 
-const DynLibUtils::CMemory &GameData::Config::GetAddress(std::string sName) const
+const DynLibUtils::CMemory &GameData::Config::GetAddress(const std::string &sName) const
 {
 	return this->m_aAddressStorage.Get(sName);
 }
 
-const ptrdiff_t &GameData::Config::GetOffset(std::string sName) const
+const ptrdiff_t &GameData::Config::GetOffset(const std::string &sName) const
 {
 	return this->m_aOffsetStorage.Get(sName);
 }
 
-void GameData::Config::SetAddress(std::string sName, DynLibUtils::CMemory aMemory)
+void GameData::Config::SetAddress(const std::string &sName, DynLibUtils::CMemory aMemory)
 {
 	this->m_aAddressStorage.Set(sName, aMemory);
 }
 
-void GameData::Config::SetOffset(std::string sName, ptrdiff_t nValue)
+void GameData::Config::SetOffset(const std::string &sName, ptrdiff_t nValue)
 {
 	this->m_aOffsetStorage.Set(sName, nValue);
 }
