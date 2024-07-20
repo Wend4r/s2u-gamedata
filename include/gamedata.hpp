@@ -339,8 +339,6 @@ public:
 		Addresses &GetAddresses();
 		Offsets &GetOffsets();
 
-		void TriggerCallbacks();
-
 	protected:
 		bool LoadEngine(IGameData *pRoot, KeyValues *pEngineValues, char *psError = NULL, size_t nMaxLength = 0);
 
