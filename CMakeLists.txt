@@ -11,9 +11,10 @@ project(gamedata
 	LANGUAGES C CXX
 )
 
-if(NOT DYNLIBUTILS_DIR)
-	message(WARNING "DYNLIBUTILS_DIR is empty")
-	set(DYNLIBUTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../memory_utils)
+if(DYNLIBUTILS_DIR)
+	file(TO_CMAKE_PATH "${DYNLIBUTILS_DIR}" DYNLIBUTILS_DIR)
+else()
+	set(DYNLIBUTILS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/memory_utils")
 endif()
 
 if(NOT SOURCESDK_DIR)
