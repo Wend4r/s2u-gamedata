@@ -108,7 +108,7 @@ public:
 			class BaseListenerCollector : public IListener
 			{
 			private:
-				using Super = IListener; // Root interface.
+				using Base = IListener; // Root interface.
 				using This = BaseListenerCollector;
 
 			public:
@@ -127,10 +127,10 @@ public:
 			class ListenerCallbacksCollector : public BaseListenerCollector<OnCollectorChangedCallback>
 			{
 			private:
-				using Super = BaseListenerCollector<OnCollectorChangedCallback>;
+				using Base = BaseListenerCollector<OnCollectorChangedCallback>;
 				using This = ListenerCallbacksCollector;
 
-				using Super::m_mapCallbacks;
+				using Base::m_mapCallbacks;
 
 			public:
 				ListenerCallbacksCollector() = default;
@@ -174,10 +174,10 @@ public:
 			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<std::vector<OnCollectorChangedCallback>>
 			{
 			private:
-				using Super = BaseListenerCollector<std::vector<OnCollectorChangedCallback>>;
+				using Base = BaseListenerCollector<std::vector<OnCollectorChangedCallback>>;
 				using This = ListenerMultipleCallbacksCollector;
 
-				using Super::m_mapCallbacks;
+				using Base::m_mapCallbacks;
 
 			public:
 				ListenerMultipleCallbacksCollector() = default;
