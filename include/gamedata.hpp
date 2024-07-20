@@ -98,7 +98,7 @@ public:
 			Storage() = default;
 			Storage(IListener *pFirstListener)
 			{
-				this->m_vecListeners.push_back(pFirstListener);
+				m_vecListeners.push_back(pFirstListener);
 			}
 
 		public:
@@ -117,7 +117,7 @@ public:
 
 				virtual void RemoveAll()
 				{
-					this->m_mapCallbacks.clear();
+					m_mapCallbacks.clear();
 				}
 
 			protected:
@@ -130,18 +130,20 @@ public:
 				using Super = BaseListenerCollector<OnCollectorChangedCallback>;
 				using This = ListenerCallbacksCollector;
 
+				using Super::m_mapCallbacks;
+
 			public:
 				ListenerCallbacksCollector() = default;
 
 			public: // BaseListenerCollector<>
 				void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) override
 				{
-					this->m_mapCallbacks[aKey] = funcCallback;
+					m_mapCallbacks[aKey] = funcCallback;
 				}
 
 				bool Remove(const K &aKey) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
 					const auto it = map.find(aKey);
 
@@ -158,7 +160,7 @@ public:
 			public: // IListener
 				void OnChanged(const K &aKey, const V &aValue) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
 					auto it = map.find(aKey);
 
@@ -175,13 +177,15 @@ public:
 				using Super = BaseListenerCollector<std::vector<OnCollectorChangedCallback>>;
 				using This = ListenerMultipleCallbacksCollector;
 
+				using Super::m_mapCallbacks;
+
 			public:
 				ListenerMultipleCallbacksCollector() = default;
 
 				// Adapter.
 				void Insert(const K &aKey, const std::vector<OnCollectorChangedCallback> &vecCallbacks) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
 					auto it = map.find(aKey);
 
@@ -198,7 +202,7 @@ public:
 			public: // BaseListenerCollector<>
 				void Insert(K aKey, OnCollectorChangedCallback funcCallback) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
 					auto it = map.find(aKey);
 
@@ -214,7 +218,7 @@ public:
 
 				bool Remove(K aKey)
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
 					const auto it = map.find(aKey);
 
@@ -231,7 +235,7 @@ public:
 			public: // IListener
 				void OnChanged(const K &aKey, const V &aValue) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
 					auto it = map.find(aKey);
 
@@ -250,45 +254,45 @@ public:
 		public:
 			void ClearValues()
 			{
-				this->m_mapValues.clear();
+				m_mapValues.clear();
 			}
 
 			void ClearListeners()
 			{
-				this->m_vecListeners.clear();
+				m_vecListeners.clear();
 			}
 
 		public:
 			const V &operator[](const K &aKey) const
 			{
-				return this->m_mapValues.at(aKey);
+				return m_mapValues.at(aKey);
 			}
 
 			const V &Get(const K &aKey) const
 			{
-				return this->operator[](aKey);
+				return operator[](aKey);
 			}
 
 			void TriggerCallbacks()
 			{
-				for(auto const &[aKey, aVal] : this->m_mapValues)
+				for(auto const &[aKey, aVal] : m_mapValues)
 				{
-					this->OnChanged(aKey, aVal);
+					OnChanged(aKey, aVal);
 				}
 			}
 
 		protected:
 			void Set(const K &aKey, const V &aValue)
 			{
-				this->m_mapValues[aKey] = aValue;
+				m_mapValues[aKey] = aValue;
 
-				this->OnChanged(aKey, aValue);
+				OnChanged(aKey, aValue);
 			}
 
 		private:
 			void OnChanged(const K &aKey, const V &aValue)
 			{
-				auto &vec = this->m_vecListeners;
+				auto &vec = m_vecListeners;
 
 				for(const auto it : vec)
 				{
@@ -299,12 +303,12 @@ public:
 		public:
 			virtual void AddListener(IListener *pListener)
 			{
-				this->m_vecListeners.push_back(pListener);
+				m_vecListeners.push_back(pListener);
 			}
 
 			virtual bool RemoveListener(IListener *pListener)
 			{
-				auto &vec = this->m_vecListeners;
+				auto &vec = m_vecListeners;
 
 				auto it = std::find(vec.begin(), vec.end(), pListener);
 
