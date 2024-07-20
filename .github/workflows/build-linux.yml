@@ -25,15 +25,16 @@ on:
 env:
   CMAKE_DEBUG_PRESET_NAME: Debug
   CMAKE_DEBUG_CONFIG_NAME: Debug
-  CMAKE_DEBUG_OUTPUT_PATTERN: build/Debug/*.so
+  CMAKE_DEBUG_OUTPUT_PATTERN: |
+    build/Debug/*.a
+    build/Debug/*.so
   CMAKE_RELEASE_PRESET_NAME: Release
   CMAKE_RELEASE_CONFIG_NAME: Release
-  CMAKE_RELEASE_OUTPUT_PATTERN: build/Release/*.so
+  CMAKE_RELEASE_OUTPUT_PATTERN: |
+    build/Release/*.a
+    build/Release/*.so
   CLANG_CC: clang
   CLANG_CXX: clang++
-  HL2SDK_BRANCH: cs2
-  HL2SDK_ROOT: external/hl2sdk-cs2
-  MMSOURCE_ROOT: external/metamod-source
 
 jobs:
   build:
@@ -73,28 +74,11 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
         fi
 
-    - name: Checkout HL2SDK
-      uses: actions/checkout@v4
-      with:
-        repository: Wend4r/hl2sdk
-        ref: ${{ env.HL2SDK_BRANCH }}
-        fetch-depth: 1
-        path: ${{ env.HL2SDK_ROOT }}
-
-    - name: Checkout MetaMod:Source
-      uses: actions/checkout@v4
-      with:
-        repository: alliedmodders/metamod-source
-        fetch-depth: 1
-        path: ${{ env.MMSOURCE_ROOT }}
-
     - name: Debug - Configure CMake (Clang)
       run: >
         cmake --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }}
         -DCMAKE_C_COMPILER=${{ env.CLANG_CC }}
         -DCMAKE_CXX_COMPILER=${{ env.CLANG_CXX }}
-        -DSOURCESDK_DIR=${{ env.ABSOLUTE_PATH }}/${{ env.HL2SDK_ROOT }}
-        -DMETAMOD_DIR=${{ env.ABSOLUTE_PATH }}/${{ env.MMSOURCE_ROOT }}
 
     - name: Debug - Build
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
@@ -111,8 +95,6 @@ jobs:
         cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
         -DCMAKE_C_COMPILER=${{ env.CLANG_CC }}
         -DCMAKE_CXX_COMPILER=${{ env.CLANG_CXX }}
-        -DSOURCESDK_DIR=${{ env.ABSOLUTE_PATH }}/${{ env.HL2SDK_ROOT }}
-        -DMETAMOD_DIR=${{ env.ABSOLUTE_PATH }}/${{ env.MMSOURCE_ROOT }}
 
     - name: Release - Build
       run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}

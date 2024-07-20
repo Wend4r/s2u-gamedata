@@ -29,9 +29,6 @@ env:
   CMAKE_RELEASE_OUTPUT_PATTERN: build/Windows/Release/Release/*
   CL_CC: cl
   CL_CXX: cl
-  HL2SDK_BRANCH: cs2
-  HL2SDK_ROOT: external\hl2sdk-cs2
-  MMSOURCE_ROOT: external\metamod-source
 
 jobs:
   build:
@@ -68,28 +65,11 @@ jobs:
         }
       shell: pwsh
 
-    - name: Checkout HL2SDK
-      uses: actions/checkout@v4
-      with:
-        repository: Wend4r/hl2sdk
-        ref: ${{ env.HL2SDK_BRANCH }}
-        fetch-depth: 1
-        path: ${{ env.HL2SDK_ROOT }}
-
-    - name: Checkout MetaMod:Source
-      uses: actions/checkout@v4
-      with:
-        repository: alliedmodders/metamod-source
-        fetch-depth: 1
-        path: ${{ env.MMSOURCE_ROOT }}
-
     - name: Release - Configure CMake
       run: >
         cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
         -DCMAKE_C_COMPILER=${{ env.CL_CC }}
         -DCMAKE_CXX_COMPILER=${{ env.CL_CXX }}
-        -DSOURCESDK_DIR=${{ env.ABSOLUTE_PATH }}\${{ env.HL2SDK_ROOT }}
-        -DMETAMOD_DIR=${{ env.ABSOLUTE_PATH }}\${{ env.MMSOURCE_ROOT }}
 
     - name: Release - Build
       run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}
