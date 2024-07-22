@@ -261,7 +261,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 	{
 		KeyValues3 *pSigSection = pSignaturesValues->GetMember(i);
 
-		const char *pszSigName = pSigSection->GetString("<none>");
+		const char *pszSigName = pSignaturesValues->GetMemberName(i);
 
 		KeyValues3 *pLibraryValues = pSigSection->FindMember(pszLibraryKey);
 
@@ -346,7 +346,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 	{
 		KeyValues3 *pOffsetSection = pOffsetsValues->GetMember(i);
 
-		const char *pszOffsetName = pOffsetSection->GetString();
+		const char *pszOffsetName = pOffsetsValues->GetMemberName(i);
 
 		KeyValues3 *pPlatformValues = pOffsetSection->FindMember(pszPlatformKey);
 
@@ -390,7 +390,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 	{
 		KeyValues3 *pAddrSection = pAddressesValues->GetMember(i);
 
-		const char *pszAddressName = pAddrSection->GetString();
+		const char *pszAddressName = pAddrSection->GetMemberName(i);
 
 		KeyValues3 *pSignatureValues = pAddrSection->FindMember(pszSignatureKey);
 
