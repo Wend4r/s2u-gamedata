@@ -22,9 +22,10 @@
 #include <gamedata.hpp>
 
 #include <stdlib.h>
+#include <iterator>
 
-#include <tier0/keyvalues.h>
 #include <tier0/platform.h>
+#include <tier1/keyvalues3.h>
 
 // Windows: linkage corresponds to a final class type.
 #ifdef META_IS_SOURCE2
@@ -155,11 +156,11 @@ GameData::Config::Config(Addresses aAddressStorage, Offsets aOffsetsStorage)
 {
 }
 
-bool GameData::Config::Load(IGameData *pRoot, KeyValues *pGameConfig, char *psError, size_t nMaxLength)
+bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, char *psError, size_t nMaxLength)
 {
 	const char *pszEngineName = GameData::GetSourceEngineName();
 
-	KeyValues *pEngineValues = pGameConfig->FindKey(pszEngineName, false);
+	KeyValues3 *pEngineValues = pGameConfig->FindMember(pszEngineName);
 
 	bool bResult = pEngineValues != nullptr;
 
@@ -191,282 +192,326 @@ GameData::Config::Offsets &GameData::Config::GetOffsets()
 	return this->m_aOffsetStorage;
 }
 
-bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues *pEngineValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, char *psError, size_t nMaxLength)
 {
-	KeyValues *pSectionValues = pEngineValues->FindKey("Signatures", false);
-
-	bool bResult = true;
-
-	if(pSectionValues) // Ignore the section not found for result.
+	struct
 	{
-		bResult = this->LoadEngineSignatures(pRoot, pSectionValues, psError, nMaxLength);
-	}
-
-	if(bResult)
+		CKV3MemberName aMember;
+		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, char *psError, size_t nMaxLength);
+	} aSections[] =
 	{
-		pSectionValues = pEngineValues->FindKey("Offsets", false);
-
-		if(pSectionValues) // Same ignore.
 		{
-			bResult = this->LoadEngineOffsets(pSectionValues, psError, nMaxLength);
+			"Signatures",
+			&GameData::Config::LoadEngineSignatures
+		},
+		{
+			"Offsets",
+			&GameData::Config::LoadEngineOffsets
+		},
+		{
+			"Addresses",
+			&GameData::Config::LoadEngineAddresses
+		}
+	};
+
+	char sSubError[MAX_GAMEDATA_ERROR_LENGTH];
+
+	for(size_t n = 0, nSize = std::size(aSections); n < nSize; n++)
+	{
+		auto &aSection = aSections[n];
+
+		auto &aSectionMember = aSection.aMember;
+
+		KeyValues3 *pEngineMember = pEngineValues->FindMember(aSectionMember);
+
+		if(!(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, (char *)sSubError, sizeof(sSubError)))
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Failed to load \"%s\" section: %s", aSectionMember.GetString(), sSubError);
+			}
+
+			return false;
 		}
 	}
 
-	if(bResult)
-	{
-		pSectionValues = pEngineValues->FindKey("Addresses", false);
-
-		if(pSectionValues)
-		{
-			bResult = this->LoadEngineAddresses(pSectionValues, psError, nMaxLength);
-		}
-	}
-
-	return bResult;
+	return true;
 }
 
-bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues *pSignaturesValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, char *psError, size_t nMaxLength)
 {
-	KeyValues *pSigSection = pSignaturesValues->GetFirstSubKey();
+	int iMemberCount = pSignaturesValues->GetMemberCount();
 
-	bool bResult = pSigSection != nullptr;
-
-	if(bResult)
+	if(!iMemberCount && psError)
 	{
-		const char *pszLibraryKey = "library", 
-		           *pszPlatformKey = GameData::GetCurrentPlatformName();
+		strncpy(psError, "Section is empty", nMaxLength);
 
-		do
+		return false;
+	}
+
+	KV3MemberId_t i = 0;
+
+	const char *pszLibraryKey = "library", 
+	           *pszPlatformKey = GameData::GetCurrentPlatformName();
+
+	do
+	{
+		KeyValues3 *pSigSection = pSignaturesValues->GetMember(i);
+
+		const char *pszSigName = pSigSection->GetString("<none>");
+
+		KeyValues3 *pLibraryValues = pSigSection->FindMember(pszLibraryKey);
+
+		if(!pLibraryValues)
 		{
-			const char *pszSigName = pSigSection->GetName();
-
-			KeyValues *pLibraryValues = pSigSection->FindKey(pszLibraryKey, false);
-
-			bResult = pLibraryValues != nullptr;
-
-			if(bResult)
+			if(psError)
 			{
-				const char *pszLibraryName = pLibraryValues->GetString(NULL, "unknown");
-
-				const auto pLibModule = pRoot->FindLibrary(pszLibraryName);
-
-				bResult = (bool)pLibModule;
-
-				if(bResult)
-				{
-					KeyValues *pPlatformValues = pSigSection->FindKey(pszPlatformKey, false);
-
-					bResult = pPlatformValues != nullptr;
-
-					if(pPlatformValues)
-					{
-						const char *pszSignature = pPlatformValues->GetString();
-
-						const auto pSigResult = pLibModule->FindPattern(pszSignature);
-
-						bResult = (bool)pSigResult;
-
-						if(bResult)
-						{
-							this->SetAddress(pszSigName, pSigResult);
-						}
-						else if(psError)
-						{
-							snprintf(psError, nMaxLength, "Failed to find \"%s\" signature", pszSigName);
-						}
-					}
-					else if(psError)
-					{
-						snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\" signature", pszPlatformKey, pszSigName);
-					}
-				}
-				else if(psError)
-				{
-					snprintf(psError, nMaxLength, "Unknown \"%s\" library at \"%s\" signature", pszLibraryName, pszSigName);
-				}
-			}
-			else if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get \"%s\" key at \"%s\" signature", pszLibraryKey, pszSigName);
+				snprintf(psError, nMaxLength, "Failed to get \"%s\" key at \"%s\"", pszLibraryKey, pszSigName);
 			}
 
-			pSigSection = pSigSection->GetNextKey();
+			return false;
 		}
-		while(pSigSection);
-	}
-	else if(psError)
-	{
-		strncpy(psError, "Signatures section is empty", nMaxLength);
-	}
 
-	return bResult;
+		const char *pszLibraryName = pLibraryValues->GetString("<none>");
+
+		const auto *pLibModule = pRoot->FindLibrary(pszLibraryName);
+
+		if(!pLibModule)
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Unknown \"%s\" library at \"%s\"", pszLibraryName, pszSigName);
+			}
+
+			return false;
+		}
+
+		KeyValues3 *pPlatformValues = pSigSection->FindMember(pszPlatformKey);
+
+		if(!pPlatformValues)
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\"", pszPlatformKey, pszSigName);
+			}
+
+			return false;
+		}
+
+		const char *pszSignature = pPlatformValues->GetString();
+
+		const auto pSigResult = pLibModule->FindPattern(pszSignature);
+
+		if(!pSigResult)
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Failed to find \"%s\"", pszSigName);
+			}
+
+			return false;
+		}
+
+		this->SetAddress(pszSigName, pSigResult);
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
 }
 
-bool GameData::Config::LoadEngineOffsets(KeyValues *pOffsetsValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, char *psError, size_t nMaxLength)
 {
-	KeyValues *pOffsetSection = pOffsetsValues->GetFirstSubKey();
+	int iMemberCount = pOffsetsValues->GetMemberCount();
 
-	bool bResult = pOffsetSection != nullptr;
-
-	if(bResult)
+	if(!iMemberCount)
 	{
-		const char *pszPlatformKey = GameData::GetCurrentPlatformName();
-
-		do
+		if(psError)
 		{
-			const char *pszOffsetName = pOffsetSection->GetName();
-
-			KeyValues *pPlatformValues = pOffsetSection->FindKey(pszPlatformKey, false);
-
-			bResult = pPlatformValues != nullptr;
-
-			if(pPlatformValues)
-			{
-				this->SetOffset(pszOffsetName, GameData::ReadOffset(pPlatformValues->GetString()));
-			}
-			else if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\" signature", pszPlatformKey, pszOffsetName);
-			}
-
-			pOffsetSection = pOffsetSection->GetNextKey();
+			strncpy(psError, "Offsets section is empty", nMaxLength);
 		}
-		while(pOffsetSection);
-	}
-	else if(psError)
-	{
-		strncpy(psError, "Offsets section is empty", nMaxLength);
+
+		return false;
 	}
 
-	return bResult;
+	KV3MemberId_t i = 0;
+
+	const char *pszPlatformKey = GameData::GetCurrentPlatformName();
+
+	do
+	{
+		KeyValues3 *pOffsetSection = pOffsetsValues->GetMember(i);
+
+		const char *pszOffsetName = pOffsetSection->GetString();
+
+		KeyValues3 *pPlatformValues = pOffsetSection->FindMember(pszPlatformKey);
+
+		if(!pPlatformValues)
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\" offset", pszPlatformKey, pszOffsetName);
+			}
+
+			return false;
+		}
+
+		this->SetOffset(pszOffsetName, GameData::ReadOffset(pPlatformValues->GetString()));
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
 }
 
-bool GameData::Config::LoadEngineAddresses(KeyValues *pAddressesValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, char *psError, size_t nMaxLength)
 {
-	KeyValues *pAddrSection = pAddressesValues->GetFirstSubKey();
+	int iMemberCount = pAddressesValues->GetMemberCount();
 
-	bool bResult = pAddrSection != nullptr;
-
-	if(bResult)
+	if(!iMemberCount && psError)
 	{
-		const char *pszSignatureKey = "signature";
+		strncpy(psError, "Section is empty", nMaxLength);
 
-		char sAddressActionsError[256];
+		return false;
+	}
 
-		do
+	KV3MemberId_t i = 0;
+
+	const char *pszSignatureKey = "signature";
+
+	char sAddressActionsError[256];
+
+	do
+	{
+		KeyValues3 *pAddrSection = pAddressesValues->GetMember(i);
+
+		const char *pszAddressName = pAddrSection->GetString();
+
+		KeyValues3 *pSignatureValues = pAddrSection->FindMember(pszSignatureKey);
+
+		if(!pSignatureValues && psError)
 		{
-			const char *pszAddressName = pAddrSection->GetName();
+			snprintf(psError, nMaxLength, "Failed to get \"%s\" signature at \"%s\" address", pszSignatureKey, pszAddressName);
 
-			KeyValues *pSignatureValues = pAddrSection->FindKey(pszSignatureKey, false);
-
-			bResult = pSignatureValues != nullptr;
-
-			if(bResult)
-			{
-				const char *pszSignatureName = pSignatureValues->GetString();
-
-				const auto &aSigAddress = this->GetAddress(pszSignatureName);
-
-				if(aSigAddress)
-				{
-					uintptr_t pAddrCur = aSigAddress.GetPtr();
-
-					// Remove an extra keys.
-					{
-						pAddrSection->RemoveSubKey(pSignatureValues, true /* bDelete */, true);
-
-						int iCurrentPlat = This::GetCurrentPlatform();
-
-						for(int iPlat = PLAT_FIRST; iPlat < PLAT_MAX; iPlat++)
-						{
-							if(iCurrentPlat != iPlat)
-							{
-								pAddrSection->FindAndDeleteSubKey(This::GetPlatformName((This::Platform)iPlat));
-							}
-						}
-					}
-
-					if(this->LoadEngineAddressActions(pAddrCur, pAddrSection, (char *)sAddressActionsError, sizeof(sAddressActionsError)))
-					{
-						this->SetAddress(pszAddressName, pAddrCur);
-					}
-					else if(psError)
-					{
-						snprintf(psError, nMaxLength, "Failed to get \"%s\" address action: %s\n", pszAddressName, sAddressActionsError);
-					}
-				}
-				else if(psError)
-				{
-					snprintf(psError, nMaxLength, "Failed to get \"%s\" signature in \"%s\" address", pszSignatureName, pszAddressName);
-				}
-			}
-			else if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get signature (\"%s\" key) at \"%s\" address", pszSignatureKey, pszAddressName);
-			}
-
-			pAddrSection = pAddrSection->GetNextKey();
+			return false;
 		}
-		while(pAddrSection);
-	}
-	else if(psError)
-	{
-		strncpy(psError, "Signatures section is empty", nMaxLength);
-	}
 
-	return bResult;
+		const char *pszSignatureName = pSignatureValues->GetString();
+
+		const auto &pSigAddress = this->GetAddress(pszSignatureName);
+
+		if(!pSigAddress)
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Failed to get \"%s\" signature in \"%s\" address", pszSignatureName, pszAddressName);
+			}
+
+			return false;
+		}
+
+		uintptr_t pAddrCur = pSigAddress.GetPtr();
+
+		// Remove an extra keys.
+		{
+			pAddrSection->RemoveMember(pSignatureValues);
+
+			int iCurrentPlat = This::GetCurrentPlatform();
+
+			for(int iPlat = PLAT_FIRST; iPlat < PLAT_MAX; iPlat++)
+			{
+				if(iCurrentPlat != iPlat)
+				{
+					pAddrSection->RemoveMember(This::GetPlatformName((This::Platform)iPlat));
+				}
+			}
+		}
+
+		if(!this->LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, (char *)sAddressActionsError, sizeof(sAddressActionsError)))
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Failed to get \"%s\" address action: %s\n", pszAddressName, sAddressActionsError);
+			}
+
+			return false;
+		}
+
+		this->SetAddress(pszAddressName, pAddrCur);
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
 }
 
-bool GameData::Config::LoadEngineAddressActions(uintptr_t &pAddrCur, KeyValues *pActionSection, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, char *psError, size_t nMaxLength)
 {
-	KeyValues *pAction = pActionSection->GetFirstSubKey();
+	int iMemberCount = pActionsValues->GetMemberCount();
 
-	bool bResult = pAction != nullptr;
-
-	if(bResult)
+	if(!iMemberCount && psError)
 	{
-		do
-		{
-			const char *pszName = pAction->GetName();
+		strncpy(psError, "Section is empty", nMaxLength);
 
-			ptrdiff_t nActionValue = GameData::ReadOffset(pAction->GetString());
-
-			if(!strcmp(pszName, "offset"))
-			{
-				pAddrCur += nActionValue;
-			}
-			else if(!strncmp(pszName, "read", 4))
-			{
-				if(!pszName[4])
-				{
-					pAddrCur = *(uintptr_t *)(pAddrCur + nActionValue);
-				}
-				else if(!strcmp(&pszName[4], "_offs32"))
-				{
-					pAddrCur = pAddrCur + nActionValue + sizeof(int32_t) + *(int32_t *)(pAddrCur + nActionValue);
-				}
-				else if(psError)
-				{
-					bResult = false;
-					snprintf(psError, nMaxLength, "Unknown \"%s\" read action", pszName);
-				}
-			}
-			else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
-			{
-				bResult = this->LoadEngineAddressActions(pAddrCur, pAction, psError, nMaxLength); // Recursive by platform.
-			}
-			else if(psError)
-			{
-				bResult = false;
-				snprintf(psError, nMaxLength, "Unknown \"%s\" action", pszName);
-			}
-
-			pAction = pAction->GetNextKey();
-		}
-		while(pAction);
+		return false;
 	}
 
-	return bResult;
+	KV3MemberId_t i = 0;
+
+	do
+	{
+		KeyValues3 *pAction = pActionsValues->GetMember(i);
+
+		const char *pszName = pAction->GetString();
+
+		ptrdiff_t nActionValue = GameData::ReadOffset(pAction->GetString());
+
+		if(!strcmp(pszName, "offset"))
+		{
+			pAddrCur += nActionValue;
+		}
+		else if(!strncmp(pszName, "read", 4))
+		{
+			if(!pszName[4])
+			{
+				pAddrCur = *(uintptr_t *)(pAddrCur + nActionValue);
+			}
+			else if(!strcmp(&pszName[4], "_offs32"))
+			{
+				pAddrCur = pAddrCur + nActionValue + sizeof(int32_t) + *(int32_t *)(pAddrCur + nActionValue);
+			}
+			else
+			{
+				if(psError)
+				{
+					snprintf(psError, nMaxLength, "Unknown \"%s\" read key", pszName);
+				}
+
+				return false;
+			}
+		}
+		else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
+		{
+			return this->LoadEngineAddressActions(pRoot, pAddrCur, pAction, psError, nMaxLength); // Recursive by platform.
+		}
+		else
+		{
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Unknown \"%s\" key", pszName);
+			}
+
+			return false;
+		}
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
 }
 
 const DynLibUtils::CMemory &GameData::Config::GetAddress(const std::string &sName) const
