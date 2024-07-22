@@ -242,9 +242,12 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 {
 	int iMemberCount = pSignaturesValues->GetMemberCount();
 
-	if(!iMemberCount && psError)
+	if(!iMemberCount)
 	{
-		strncpy(psError, "Section is empty", nMaxLength);
+		if(psError)
+		{
+			strncpy(psError, "Section is empty", nMaxLength);
+		}
 
 		return false;
 	}
@@ -391,9 +394,12 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		KeyValues3 *pSignatureValues = pAddrSection->FindMember(pszSignatureKey);
 
-		if(!pSignatureValues && psError)
+		if(!pSignatureValues)
 		{
-			snprintf(psError, nMaxLength, "Failed to get \"%s\" signature at \"%s\" address", pszSignatureKey, pszAddressName);
+			if(psError)
+			{
+				snprintf(psError, nMaxLength, "Failed to get \"%s\" signature at \"%s\" address", pszSignatureKey, pszAddressName);
+			}
 
 			return false;
 		}
@@ -452,9 +458,12 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 {
 	int iMemberCount = pActionsValues->GetMemberCount();
 
-	if(!iMemberCount && psError)
+	if(!iMemberCount)
 	{
-		strncpy(psError, "Section is empty", nMaxLength);
+		if(psError)
+		{
+			strncpy(psError, "Section is empty", nMaxLength);
+		}
 
 		return false;
 	}
