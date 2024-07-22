@@ -224,7 +224,7 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, c
 
 		KeyValues3 *pEngineMember = pEngineValues->FindMember(aSectionMember);
 
-		if(!(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, (char *)sSubError, sizeof(sSubError)))
+		if(pEngineMember && !(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, (char *)sSubError, sizeof(sSubError)))
 		{
 			if(psError)
 			{
