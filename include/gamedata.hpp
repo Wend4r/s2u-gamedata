@@ -267,12 +267,12 @@ public:
 		public:
 			const V &operator[](const K &aKey) const
 			{
-				return m_mapValues.at(aKey);
+				return m_mapValues[aKey];
 			}
 
 			const V &Get(const K &aKey) const
 			{
-				return operator[](aKey);
+				return m_mapValues.at(aKey);
 			}
 
 			void TriggerCallbacks()
