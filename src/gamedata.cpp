@@ -360,7 +360,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 			return false;
 		}
 
-		this->SetOffset(pszOffsetName, GameData::ReadOffset(pPlatformValues->GetString()));
+		this->SetOffset(pszOffsetName, pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
 
 		i++;
 	}
