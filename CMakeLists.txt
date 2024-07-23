@@ -5,7 +5,7 @@ if(POLICY CMP0092)
 endif()
 
 project(gamedata
-	VERSION 1.0.0
+	VERSION 1.0.1
 	DESCRIPTION "GameData"
 	HOMEPAGE_URL "https://github.com/Wend4r/s2u-gamedata"
 	LANGUAGES C CXX
