@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <iterator>
 
+#include <tier0/bufferstring.h>
+#include <tier0/commonmacros.h>
 #include <tier0/platform.h>
 #include <tier1/keyvalues3.h>
 
@@ -47,7 +49,7 @@ DLL_IMPORT IServerGameDLL *server;
 DynLibUtils::CModule g_aLibEngine, 
                      g_aLibServer;
 
-bool GameData::Init(char *psError, size_t nMaxLength)
+bool GameData::Init(CBufferString &sMessage)
 {
 	bool bResult = g_aLibEngine.InitFromMemory(engine);
 
@@ -63,12 +65,16 @@ bool GameData::Init(char *psError, size_t nMaxLength)
 		}
 		else
 		{
-			strncpy(psError, "Failed to get server module", nMaxLength);
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "server", " module"};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 		}
 	}
 	else
 	{
-		strncpy(psError, "Failed to get engine module", nMaxLength);
+		const char *pszMessageConcat[] = {"Failed to ", "get ", "engine", " module"};
+
+		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 	}
 
 	return true;
@@ -156,7 +162,7 @@ GameData::Config::Config(Addresses aAddressStorage, Offsets aOffsetsStorage)
 {
 }
 
-bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, char *psError, size_t nMaxLength)
+bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferString &sMessage)
 {
 	const char *pszEngineName = GameData::GetSourceEngineName();
 
@@ -166,11 +172,13 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, char *psE
 
 	if(bResult)
 	{
-		bResult = this->LoadEngine(pRoot, pEngineValues, psError, nMaxLength);
+		bResult = this->LoadEngine(pRoot, pEngineValues, sMessage);
 	}
-	else if(psError)
+	else
 	{
-		snprintf(psError, nMaxLength, "Failed to find \"%s\" section", pszEngineName);
+		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineName, "\" section"};
+
+		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 	}
 
 	return bResult;
@@ -192,12 +200,12 @@ GameData::Config::Offsets &GameData::Config::GetOffsets()
 	return this->m_aOffsetStorage;
 }
 
-bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferString &sMessage)
 {
 	struct
 	{
 		CKV3MemberName aMember;
-		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, char *psError, size_t nMaxLength);
+		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, CBufferString &sMessage);
 	} aSections[] =
 	{
 		{
@@ -214,9 +222,9 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, c
 		}
 	};
 
-	char sSubError[MAX_GAMEDATA_ERROR_LENGTH];
+	CBufferStringGrowable<MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH> sSubMessage;
 
-	for(size_t n = 0, nSize = std::size(aSections); n < nSize; n++)
+	for(size_t n = 0, nSize = ARRAYSIZE(aSections); n < nSize; n++)
 	{
 		auto &aSection = aSections[n];
 
@@ -224,12 +232,11 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, c
 
 		KeyValues3 *pEngineMember = pEngineValues->FindMember(aSectionMember);
 
-		if(pEngineMember && !(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, (char *)sSubError, sizeof(sSubError)))
+		if(pEngineMember && !(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, sSubMessage))
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to load \"%s\" section: %s", aSectionMember.GetString(), sSubError);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "load \"", aSectionMember.GetString(), "\" section: ", sSubMessage.Get()};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -238,16 +245,15 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, c
 	return true;
 }
 
-bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferString &sMessage)
 {
 	int iMemberCount = pSignaturesValues->GetMemberCount();
 
 	if(!iMemberCount)
 	{
-		if(psError)
-		{
-			strncpy(psError, "Section is empty", nMaxLength);
-		}
+		const char *pszMessageConcat[] = {"Section is empty"};
+
+		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 		return false;
 	}
@@ -267,10 +273,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		if(!pLibraryValues)
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get \"%s\" key at \"%s\"", pszLibraryKey, pszSigName);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszLibraryKey, "\" key ", "at \"", pszSigName, "\""};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -281,10 +286,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		if(!pLibModule)
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Unknown \"%s\" library at \"%s\"", pszLibraryName, pszSigName);
-			}
+			const char *pszMessageConcat[] = {"Unknown \"", pszLibraryName, "\" library ", "at \"", pszSigName, "\""};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -293,10 +297,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		if(!pPlatformValues)
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\"", pszPlatformKey, pszSigName);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "platform ", "(\"", pszPlatformKey, "\" key) ", "at \"", pszSigName, "\""};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -307,10 +310,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		if(!pSigResult)
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to find \"%s\"", pszSigName);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszSigName, "\""};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -324,16 +326,15 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 	return true;
 }
 
-bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferString &sMessage)
 {
 	int iMemberCount = pOffsetsValues->GetMemberCount();
 
 	if(!iMemberCount)
 	{
-		if(psError)
-		{
-			strncpy(psError, "Offsets section is empty", nMaxLength);
-		}
+		const char *pszMessageConcat[] = {"Offsets section is empty"};
+
+		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 		return false;
 	}
@@ -352,10 +353,9 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 
 		if(!pPlatformValues)
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\" offset", pszPlatformKey, pszOffsetName);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "get ", " platform ", "(\"", pszPlatformKey, "\" key)", "at \"", pszOffsetName, "\""};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -369,13 +369,15 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 	return true;
 }
 
-bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferString &sMessage)
 {
 	int iMemberCount = pAddressesValues->GetMemberCount();
 
-	if(!iMemberCount && psError)
+	if(!iMemberCount)
 	{
-		strncpy(psError, "Section is empty", nMaxLength);
+		const char *pszMessageConcat[] = {"Section is empty"};
+
+		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 		return false;
 	}
@@ -384,7 +386,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 	const char *pszSignatureKey = "signature";
 
-	char sAddressActionsError[256];
+	CBufferStringGrowable<MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH> sSubMessage;
 
 	do
 	{
@@ -396,10 +398,9 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		if(!pSignatureValues)
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get \"%s\" signature at \"%s\" address", pszSignatureKey, pszAddressName);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" key ", "at \"", pszAddressName, "\""};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -410,10 +411,9 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		if(!pSigAddress)
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get \"%s\" signature in \"%s\" address", pszSignatureName, pszAddressName);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" signature ", "in \"", pszAddressName, "\""};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -435,12 +435,11 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			}
 		}
 
-		if(!this->LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, (char *)sAddressActionsError, sizeof(sAddressActionsError)))
+		if(!this->LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, sSubMessage))
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get \"%s\" address action: %s\n", pszAddressName, sAddressActionsError);
-			}
+			const char *pszMessageConcat[] = {"Failed to ", "load ", "\"", pszSignatureKey, "\" address action: ", sSubMessage.Get()};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}
@@ -454,16 +453,15 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 	return true;
 }
 
-bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CBufferString &sMessage)
 {
 	int iMemberCount = pActionsValues->GetMemberCount();
 
 	if(!iMemberCount)
 	{
-		if(psError)
-		{
-			strncpy(psError, "Section is empty", nMaxLength);
-		}
+		const char *pszMessageConcat[] = {"Section is empty"};
+
+		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 		return false;
 	}
@@ -494,24 +492,22 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 			}
 			else
 			{
-				if(psError)
-				{
-					snprintf(psError, nMaxLength, "Unknown \"%s\" read key", pszName);
-				}
+				const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" read key"};
+
+				sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 				return false;
 			}
 		}
 		else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
 		{
-			return this->LoadEngineAddressActions(pRoot, pAddrCur, pAction, psError, nMaxLength); // Recursive by platform.
+			return this->LoadEngineAddressActions(pRoot, pAddrCur, pAction, sMessage); // Recursive by platform.
 		}
 		else
 		{
-			if(psError)
-			{
-				snprintf(psError, nMaxLength, "Unknown \"%s\" key", pszName);
-			}
+			const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" key"};
+
+			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
 
 			return false;
 		}

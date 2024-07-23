@@ -22,7 +22,10 @@
 #ifndef _INCLUDE_GAMEDATA_HPP_
 #define _INCLUDE_GAMEDATA_HPP_
 
-#define MAX_GAMEDATA_ERROR_LENGTH 256
+#define MAX_GAMEDATA_SECTION_MESSAGE_LENGTH 256
+#define MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH MAX_GAMEDATA_SECTION_MESSAGE_LENGTH
+#define MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
+#define MAX_GAMEDATA_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
 
 #include <dynlibutils/module.hpp>
 #include <dynlibutils/memaddr.hpp>
@@ -33,6 +36,7 @@
 #include <string>
 #include <vector>
 
+class CBufferString;
 class KeyValues3;
 
 class IGameData
@@ -46,7 +50,7 @@ class GameData : public IGameData
 	using This = GameData;
 
 public:
-	bool Init(char *psError, size_t nMaxLength);
+	bool Init(CBufferString &sMessage);
 	void Clear();
 	void Destroy();
 
@@ -336,7 +340,7 @@ public:
 		Config(Addresses aInitAddressStorage, Offsets aInitOffsetsStorage);
 
 	public:
-		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, char *psError = NULL, size_t nMaxLength = 0);
+		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferString &sMessage);
 		void ClearValues();
 
 	public:
@@ -344,14 +348,14 @@ public:
 		Offsets &GetOffsets();
 
 	protected:
-		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, char *psError = NULL, size_t nMaxLength = 0);
+		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferString &sMessage);
 
-		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, char *psError = NULL, size_t nMaxLength = 0);
-		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, char *psError = NULL, size_t nMaxLength = 0);
+		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferString &sMessage);
+		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferString &sMessage);
 
 		// Step #2 - addresses.
-		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, char *psError = NULL, size_t nMaxLength = 0);
-		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues, char *psError = NULL, size_t nMaxLength = 0);
+		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferString &sMessage);
+		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues, CBufferString &sMessage);
 
 	public:
 		const DynLibUtils::CMemory &GetAddress(const std::string &sName) const;
