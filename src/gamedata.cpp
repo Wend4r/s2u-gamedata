@@ -390,7 +390,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 	{
 		KeyValues3 *pAddrSection = pAddressesValues->GetMember(i);
 
-		const char *pszAddressName = pAddrSection->GetMemberName(i);
+		const char *pszAddressName = pAddressesValues->GetMemberName(i);
 
 		KeyValues3 *pSignatureValues = pAddrSection->FindMember(pszSignatureKey);
 
@@ -474,7 +474,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 	{
 		KeyValues3 *pAction = pActionsValues->GetMember(i);
 
-		const char *pszName = pAction->GetString();
+		const char *pszName = pActionsValues->GetMemberName(i);
 
 		ptrdiff_t nActionValue = GameData::ReadOffset(pAction->GetString());
 
