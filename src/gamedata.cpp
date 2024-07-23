@@ -21,9 +21,6 @@
 
 #include <gamedata.hpp>
 
-#include <stdlib.h>
-#include <iterator>
-
 #include <tier0/bufferstring.h>
 #include <tier0/commonmacros.h>
 #include <tier0/platform.h>
