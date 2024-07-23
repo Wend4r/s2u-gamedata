@@ -52,13 +52,13 @@ bool GameData::Init(CBufferString &sMessage)
 
 	if(bResult)
 	{
-		this->m_aLibraryMap["engine"] = &g_aLibEngine;
+		m_aLibraryMap["engine"] = &g_aLibEngine;
 
 		bResult = g_aLibServer.InitFromMemory(server);
 
 		if(bResult)
 		{
-			this->m_aLibraryMap["server"] = &g_aLibServer;
+			m_aLibraryMap["server"] = &g_aLibServer;
 		}
 		else
 		{
@@ -79,7 +79,7 @@ bool GameData::Init(CBufferString &sMessage)
 
 void GameData::Clear()
 {
-	this->m_aLibraryMap.clear();
+	m_aLibraryMap.clear();
 }
 
 void GameData::Destroy()
@@ -89,9 +89,9 @@ void GameData::Destroy()
 
 const DynLibUtils::CModule *GameData::FindLibrary(std::string sName) const
 {
-	auto itResult = this->m_aLibraryMap.find(sName);
+	auto itResult = m_aLibraryMap.find(sName);
 
-	return itResult == this->m_aLibraryMap.cend() ? nullptr : itResult->second;
+	return itResult == m_aLibraryMap.cend() ? nullptr : itResult->second;
 }
 
 const char *GameData::GetSourceEngineName()
@@ -169,7 +169,7 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 
 	if(bResult)
 	{
-		bResult = this->LoadEngine(pRoot, pEngineValues, sMessage);
+		bResult = LoadEngine(pRoot, pEngineValues, sMessage);
 	}
 	else
 	{
@@ -183,18 +183,18 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 
 void GameData::Config::ClearValues()
 {
-	this->m_aAddressStorage.ClearValues();
-	this->m_aOffsetStorage.ClearValues();
+	m_aAddressStorage.ClearValues();
+	m_aOffsetStorage.ClearValues();
 }
 
 GameData::Config::Addresses &GameData::Config::GetAddresses()
 {
-	return this->m_aAddressStorage;
+	return m_aAddressStorage;
 }
 
 GameData::Config::Offsets &GameData::Config::GetOffsets()
 {
-	return this->m_aOffsetStorage;
+	return m_aOffsetStorage;
 }
 
 bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferString &sMessage)
@@ -314,7 +314,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 			return false;
 		}
 
-		this->SetAddress(pszSigName, pSigResult);
+		SetAddress(pszSigName, pSigResult);
 
 		i++;
 	}
@@ -357,7 +357,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 			return false;
 		}
 
-		this->SetOffset(pszOffsetName, pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
+		SetOffset(pszOffsetName, pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
 
 		i++;
 	}
@@ -404,7 +404,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		const char *pszSignatureName = pSignatureValues->GetString();
 
-		const auto &pSigAddress = this->GetAddress(pszSignatureName);
+		const auto &pSigAddress = GetAddress(pszSignatureName);
 
 		if(!pSigAddress)
 		{
@@ -432,7 +432,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			}
 		}
 
-		if(!this->LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, sSubMessage))
+		if(!LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, sSubMessage))
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "load ", "\"", pszSignatureKey, "\" address action: ", sSubMessage.Get()};
 
@@ -441,7 +441,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			return false;
 		}
 
-		this->SetAddress(pszAddressName, pAddrCur);
+		SetAddress(pszAddressName, pAddrCur);
 
 		i++;
 	}
@@ -498,7 +498,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 		}
 		else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
 		{
-			return this->LoadEngineAddressActions(pRoot, pAddrCur, pAction, sMessage); // Recursive by platform.
+			return LoadEngineAddressActions(pRoot, pAddrCur, pAction, sMessage); // Recursive by platform.
 		}
 		else
 		{
@@ -518,20 +518,20 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 
 const DynLibUtils::CMemory &GameData::Config::GetAddress(const std::string &sName) const
 {
-	return this->m_aAddressStorage.Get(sName);
+	return m_aAddressStorage.Get(sName);
 }
 
 const ptrdiff_t &GameData::Config::GetOffset(const std::string &sName) const
 {
-	return this->m_aOffsetStorage.Get(sName);
+	return m_aOffsetStorage.Get(sName);
 }
 
 void GameData::Config::SetAddress(const std::string &sName, DynLibUtils::CMemory aMemory)
 {
-	this->m_aAddressStorage.Set(sName, aMemory);
+	m_aAddressStorage.Set(sName, aMemory);
 }
 
 void GameData::Config::SetOffset(const std::string &sName, ptrdiff_t nValue)
 {
-	this->m_aOffsetStorage.Set(sName, nValue);
+	m_aOffsetStorage.Set(sName, nValue);
 }
