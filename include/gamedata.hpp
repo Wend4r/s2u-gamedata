@@ -27,8 +27,6 @@
 #include <dynlibutils/module.hpp>
 #include <dynlibutils/memaddr.hpp>
 
-#include <stddef.h>
-
 #include <functional>
 #include <map>
 #include <utility>
