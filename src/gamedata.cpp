@@ -45,54 +45,6 @@ DLL_IMPORT IServerGameDLL *server;
 DynLibUtils::CModule g_aLibEngine, 
                      g_aLibServer;
 
-bool GameData::Init(CUtlVector<CBufferStringConcat> &vecMessages)
-{
-	bool bResult = g_aLibEngine.InitFromMemory(engine);
-
-	if(bResult)
-	{
-		m_aLibraryMap["engine"] = &g_aLibEngine;
-
-		bResult = g_aLibServer.InitFromMemory(server);
-
-		if(bResult)
-		{
-			m_aLibraryMap["server"] = &g_aLibServer;
-		}
-		else
-		{
-			static const char *s_pszMessageConcat[] = {"Failed to ", "get ", "server", " module"};
-
-			vecMessages.AddToTail({s_pszMessageConcat});
-		}
-	}
-	else
-	{
-		static const char *s_pszMessageConcat[] = {"Failed to ", "get ", "engine", " module"};
-
-		vecMessages.AddToTail({s_pszMessageConcat});
-	}
-
-	return true;
-}
-
-void GameData::Clear()
-{
-	m_aLibraryMap.clear();
-}
-
-void GameData::Destroy()
-{
-	// ...
-}
-
-const DynLibUtils::CModule *GameData::FindLibrary(std::string sName) const
-{
-	auto itResult = m_aLibraryMap.find(sName);
-
-	return itResult == m_aLibraryMap.cend() ? nullptr : itResult->second;
-}
-
 const char *GameData::GetSourceEngineName()
 {
 #if SOURCE_ENGINE == SE_CS2
@@ -127,7 +79,7 @@ GameData::Platform GameData::GetCurrentPlatform()
 
 const char *GameData::GetCurrentPlatformName()
 {
-	return This::GetPlatformName(This::GetCurrentPlatform());
+	return GetPlatformName(GetCurrentPlatform());
 }
 
 const char *GameData::GetPlatformName(Platform eElm)
@@ -427,13 +379,13 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 		{
 			pAddrSection->RemoveMember(pSignatureValues);
 
-			int iCurrentPlat = This::GetCurrentPlatform();
+			int iCurrentPlat = GetCurrentPlatform();
 
 			for(int iPlat = PLAT_FIRST; iPlat < PLAT_MAX; iPlat++)
 			{
 				if(iCurrentPlat != iPlat)
 				{
-					pAddrSection->RemoveMember(This::GetPlatformName((This::Platform)iPlat));
+					pAddrSection->RemoveMember(GetPlatformName((Platform)iPlat));
 				}
 			}
 		}

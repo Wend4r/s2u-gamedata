@@ -40,20 +40,16 @@
 #include <tier0/bufferstring.h>
 #include <tier1/utlvector.h>
 
-class CBufferString;
 class KeyValues3;
 
 class IGameData
 {
 public:
-	virtual const DynLibUtils::CModule *FindLibrary(std::string sName) const = 0;
+	virtual const DynLibUtils::CModule *FindLibrary(const std::string &sName) const = 0;
 }; // IGameData
 
-class GameData : public IGameData
+namespace GameData
 {
-public:
-	using This = GameData;
-
 	using CBufferStringSection = CBufferStringGrowable<MAX_GAMEDATA_SECTION_MESSAGE_LENGTH>;
 
 	class CBufferStringConcat : public CBufferStringSection
@@ -74,17 +70,8 @@ public:
 			Insert(0, pszStartWtih);
 			AppendConcat(N, pszSplit, NULL);
 		}
-	};
+	}; // GameData::CBufferStringConcat
 
-public:
-	bool Init(CUtlVector<CBufferStringConcat> &vecMessages);
-	void Clear();
-	void Destroy();
-
-public: // IGameData
-	const DynLibUtils::CModule *FindLibrary(std::string sName) const;
-
-protected:
 	static const char *GetSourceEngineName();
 
 	enum Platform : int
@@ -110,7 +97,6 @@ protected:
 
 	static ptrdiff_t ReadOffset(const char *pszValue);
 
-public:
 	class Config
 	{
 	public:
@@ -140,7 +126,6 @@ public:
 			{
 			private:
 				using Base = IListener; // Root interface.
-				using This = BaseListenerCollector;
 
 			public:
 				virtual void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) = 0;
@@ -159,8 +144,6 @@ public:
 			{
 			private:
 				using Base = BaseListenerCollector<OnCollectorChangedCallback>;
-				using This = ListenerCallbacksCollector;
-
 				using Base::m_mapCallbacks;
 
 			public:
@@ -206,8 +189,6 @@ public:
 			{
 			private:
 				using Base = BaseListenerCollector<std::vector<OnCollectorChangedCallback>>;
-				using This = ListenerMultipleCallbacksCollector;
-
 				using Base::m_mapCallbacks;
 
 			public:
@@ -396,9 +377,6 @@ public:
 		Addresses m_aAddressStorage;
 		Offsets m_aOffsetStorage;
 	}; // GameData::Config
-
-private:
-	std::map<std::string, const DynLibUtils::CModule *> m_aLibraryMap;
 }; // GameData
 
 #endif //_INCLUDE_GAMEDATA_HPP_
