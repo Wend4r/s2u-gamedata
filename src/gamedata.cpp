@@ -21,7 +21,6 @@
 
 #include <gamedata.hpp>
 
-#include <tier0/bufferstring.h>
 #include <tier0/commonmacros.h>
 #include <tier0/platform.h>
 #include <tier1/keyvalues3.h>
@@ -46,7 +45,7 @@ DLL_IMPORT IServerGameDLL *server;
 DynLibUtils::CModule g_aLibEngine, 
                      g_aLibServer;
 
-bool GameData::Init(CBufferString &sMessage)
+bool GameData::Init(CUtlVector<CBufferStringConcat> &vecMessages)
 {
 	bool bResult = g_aLibEngine.InitFromMemory(engine);
 
@@ -62,16 +61,16 @@ bool GameData::Init(CBufferString &sMessage)
 		}
 		else
 		{
-			const char *pszMessageConcat[] = {"Failed to ", "get ", "server", " module"};
+			static const char *s_pszMessageConcat[] = {"Failed to ", "get ", "server", " module"};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail({s_pszMessageConcat});
 		}
 	}
 	else
 	{
-		const char *pszMessageConcat[] = {"Failed to ", "get ", "engine", " module"};
+		static const char *s_pszMessageConcat[] = {"Failed to ", "get ", "engine", " module"};
 
-		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+		vecMessages.AddToTail({s_pszMessageConcat});
 	}
 
 	return true;
@@ -159,7 +158,7 @@ GameData::Config::Config(Addresses aAddressStorage, Offsets aOffsetsStorage)
 {
 }
 
-bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferString &sMessage)
+bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CUtlVector<CBufferStringConcat> &vecMessages)
 {
 	const char *pszEngineName = GameData::GetSourceEngineName();
 
@@ -169,13 +168,13 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 
 	if(bResult)
 	{
-		bResult = LoadEngine(pRoot, pEngineValues, sMessage);
+		bResult = LoadEngine(pRoot, pEngineValues, vecMessages);
 	}
 	else
 	{
 		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineName, "\" section"};
 
-		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+		vecMessages.AddToTail({pszMessageConcat});
 	}
 
 	return bResult;
@@ -197,12 +196,12 @@ GameData::Config::Offsets &GameData::Config::GetOffsets()
 	return m_aOffsetStorage;
 }
 
-bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferString &sMessage)
+bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CUtlVector<CBufferStringConcat> &vecMessages)
 {
 	struct
 	{
 		CKV3MemberName aMember;
-		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, CBufferString &sMessage);
+		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, CUtlVector<CBufferStringConcat> &vecMessages);
 	} aSections[] =
 	{
 		{
@@ -219,9 +218,9 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 		}
 	};
 
-	CBufferStringGrowable<MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH> sSubMessage;
+	CUtlVector<CBufferStringConcat> vecSubMessages;
 
-	for(size_t n = 0, nSize = ARRAYSIZE(aSections); n < nSize; n++)
+	for(std::size_t n = 0, nSize = ARRAYSIZE(aSections); n < nSize; n++)
 	{
 		auto &aSection = aSections[n];
 
@@ -229,28 +228,35 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 
 		KeyValues3 *pEngineMember = pEngineValues->FindMember(aSectionMember);
 
-		if(pEngineMember && !(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, sSubMessage))
+		if(pEngineMember && !(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, vecSubMessages))
 		{
-			const char *pszMessageConcat[] = {"Failed to ", "load \"", aSectionMember.GetString(), "\" section: ", sSubMessage.Get()};
+			const char *pszMessageConcat[] = {"Failed to ", "load \"", aSectionMember.GetString(), "\" section:"};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			FOR_EACH_VEC(vecSubMessages, i)
+			{
+				const auto &it = vecSubMessages[i];
+
+				const char *pszSubMessageConcat[] = {"\t", it.Get()};
+
+				vecMessages.AddToTail(pszSubMessageConcat);
+			}
 		}
 	}
 
 	return true;
 }
 
-bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferString &sMessage)
+bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CUtlVector<CBufferStringConcat> &vecMessages)
 {
 	int iMemberCount = pSignaturesValues->GetMemberCount();
 
 	if(!iMemberCount)
 	{
-		const char *pszMessageConcat[] = {"Section is empty"};
+		static const char *s_pszMessageConcat[] = {"Section is empty"};
 
-		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+		vecMessages.AddToTail(s_pszMessageConcat);
 
 		return false;
 	}
@@ -272,9 +278,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszLibraryKey, "\" key ", "at \"", pszSigName, "\""};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		const char *pszLibraryName = pLibraryValues->GetString("<none>");
@@ -285,9 +291,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 		{
 			const char *pszMessageConcat[] = {"Unknown \"", pszLibraryName, "\" library ", "at \"", pszSigName, "\""};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		KeyValues3 *pPlatformValues = pSigSection->FindMember(pszPlatformKey);
@@ -296,9 +302,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "platform ", "(\"", pszPlatformKey, "\" key) ", "at \"", pszSigName, "\""};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		const char *pszSignature = pPlatformValues->GetString();
@@ -309,9 +315,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszSigName, "\""};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		SetAddress(pszSigName, pSigResult);
@@ -323,15 +329,15 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 	return true;
 }
 
-bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferString &sMessage)
+bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CUtlVector<CBufferStringConcat> &vecMessages)
 {
 	int iMemberCount = pOffsetsValues->GetMemberCount();
 
 	if(!iMemberCount)
 	{
-		const char *pszMessageConcat[] = {"Offsets section is empty"};
+		static const char *s_pszMessageConcat[] = {"Offsets section is empty"};
 
-		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+		vecMessages.AddToTail(s_pszMessageConcat);
 
 		return false;
 	}
@@ -352,9 +358,9 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "get ", " platform ", "(\"", pszPlatformKey, "\" key)", "at \"", pszOffsetName, "\""};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		SetOffset(pszOffsetName, pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
@@ -366,15 +372,15 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 	return true;
 }
 
-bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferString &sMessage)
+bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CUtlVector<CBufferStringConcat> &vecMessages)
 {
 	int iMemberCount = pAddressesValues->GetMemberCount();
 
 	if(!iMemberCount)
 	{
-		const char *pszMessageConcat[] = {"Section is empty"};
+		const char *s_pszMessageConcat[] = {"Section is empty"};
 
-		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+		vecMessages.AddToTail(s_pszMessageConcat);
 
 		return false;
 	}
@@ -383,7 +389,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 	const char *pszSignatureKey = "signature";
 
-	CBufferStringGrowable<MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH> sSubMessage;
+	CUtlVector<CBufferStringConcat> vecSubMessages;
 
 	do
 	{
@@ -397,9 +403,9 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" key ", "at \"", pszAddressName, "\""};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		const char *pszSignatureName = pSignatureValues->GetString();
@@ -410,9 +416,9 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" signature ", "in \"", pszAddressName, "\""};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		uintptr_t pAddrCur = pSigAddress.GetPtr();
@@ -432,13 +438,22 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			}
 		}
 
-		if(!LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, sSubMessage))
+		if(!LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, vecSubMessages))
 		{
-			const char *pszMessageConcat[] = {"Failed to ", "load ", "\"", pszSignatureKey, "\" address action: ", sSubMessage.Get()};
+			const char *pszMessageConcat[] = {"Failed to ", "load ", "\"", pszSignatureKey, "\" address action:"};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			FOR_EACH_VEC(vecSubMessages, i)
+			{
+				const auto &it = vecSubMessages[i];
+
+				const char *pszSubMessageConcat[] = {"\t", it.Get()};
+
+				vecMessages.AddToTail(pszSubMessageConcat);
+			}
+
+			continue;
 		}
 
 		SetAddress(pszAddressName, pAddrCur);
@@ -450,15 +465,15 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 	return true;
 }
 
-bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CBufferString &sMessage)
+bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CUtlVector<CBufferStringConcat> &vecMessages)
 {
 	int iMemberCount = pActionsValues->GetMemberCount();
 
 	if(!iMemberCount)
 	{
-		const char *pszMessageConcat[] = {"Section is empty"};
+		static const char *s_pszMessageConcat[] = {"Section is empty"};
 
-		sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+		vecMessages.AddToTail(s_pszMessageConcat);
 
 		return false;
 	}
@@ -491,22 +506,22 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 			{
 				const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" read key"};
 
-				sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+				vecMessages.AddToTail(pszMessageConcat);
 
-				return false;
+				continue;
 			}
 		}
 		else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
 		{
-			return LoadEngineAddressActions(pRoot, pAddrCur, pAction, sMessage); // Recursive by platform.
+			return LoadEngineAddressActions(pRoot, pAddrCur, pAction, vecMessages); // Recursive by platform.
 		}
 		else
 		{
 			const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" key"};
 
-			sMessage.AppendConcat(ARRAYSIZE(pszMessageConcat), pszMessageConcat, NULL);
+			vecMessages.AddToTail(pszMessageConcat);
 
-			return false;
+			continue;
 		}
 
 		i++;

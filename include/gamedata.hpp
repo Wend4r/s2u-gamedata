@@ -30,11 +30,15 @@
 #include <dynlibutils/module.hpp>
 #include <dynlibutils/memaddr.hpp>
 
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <utility>
 #include <string>
 #include <vector>
+
+#include <tier0/bufferstring.h>
+#include <tier1/utlvector.h>
 
 class CBufferString;
 class KeyValues3;
@@ -47,10 +51,33 @@ public:
 
 class GameData : public IGameData
 {
+public:
 	using This = GameData;
 
+	using CBufferStringSection = CBufferStringGrowable<MAX_GAMEDATA_SECTION_MESSAGE_LENGTH>;
+
+	class CBufferStringConcat : public CBufferStringSection
+	{
+	public:
+		using Base = CBufferStringSection;
+		using Base::Base;
+
+		template<std::size_t N>
+		CBufferStringConcat(const char *(&pszSplit)[N])
+		{
+			AppendConcat(N, pszSplit, NULL);
+		}
+
+		template<std::size_t N>
+		CBufferStringConcat(const char *pszStartWtih, const char *(&pszSplit)[N])
+		{
+			Insert(0, pszStartWtih);
+			AppendConcat(N, pszSplit, NULL);
+		}
+	};
+
 public:
-	bool Init(CBufferString &sMessage);
+	bool Init(CUtlVector<CBufferStringConcat> &vecMessages);
 	void Clear();
 	void Destroy();
 
@@ -340,7 +367,7 @@ public:
 		Config(Addresses aInitAddressStorage, Offsets aInitOffsetsStorage);
 
 	public:
-		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferString &sMessage);
+		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CUtlVector<CBufferStringConcat> &vecMessages);
 		void ClearValues();
 
 	public:
@@ -348,14 +375,14 @@ public:
 		Offsets &GetOffsets();
 
 	protected:
-		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferString &sMessage);
+		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CUtlVector<CBufferStringConcat> &vecMessages);
 
-		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferString &sMessage);
-		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferString &sMessage);
+		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CUtlVector<CBufferStringConcat> &vecMessages);
+		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CUtlVector<CBufferStringConcat> &vecMessages);
 
 		// Step #2 - addresses.
-		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferString &sMessage);
-		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues, CBufferString &sMessage);
+		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CUtlVector<CBufferStringConcat> &vecMessages);
+		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CUtlVector<CBufferStringConcat> &vecMessages);
 
 	public:
 		const DynLibUtils::CMemory &GetAddress(const std::string &sName) const;
