@@ -121,7 +121,7 @@ namespace GameData
 
 			Storage(IListener *pFirstListener)
 			{
-				m_vecListeners.push_back(pFirstListener);
+				m_vecListeners.AddToTail(pFirstListener);
 			}
 
 		public:
@@ -145,7 +145,7 @@ namespace GameData
 
 				virtual void RemoveAll()
 				{
-					m_mapCallbacks.clear();
+					m_mapCallbacks.Purge();
 				}
 
 			protected:
@@ -164,20 +164,33 @@ namespace GameData
 			public: // BaseListenerCollector<>
 				void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) override
 				{
-					m_mapCallbacks[aKey] = funcCallback;
+					auto &map = m_mapCallbacks;
+
+					auto iFoundIndex = map.Find(aKey);
+
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
+					{
+						auto &it = map.Element(iFoundIndex);
+
+						it = funcCallback;
+					}
+					else
+					{
+						map.Insert(aKey, funcCallback);
+					}
 				}
 
 				bool Remove(const K &aKey) override
 				{
 					auto &map = m_mapCallbacks;
 
-					const auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					bool bResult = it != map.cend();
+					bool bResult = IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks);
 
 					if(bResult)
 					{
-						map.erase(it);
+						map.RemoveAt(iFoundIndex);
 					}
 
 					return bResult;
@@ -188,12 +201,13 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					if(it != map.cend())
-					{
-						(it->second)(aKey, aValue);
-					}
+					Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks));
+
+					auto &it = map.Element(iFoundIndex);
+
+					it(aKey, aValue);
 				}
 			}; // GameData::Config::Storage::ListenerCallbacksCollector
 
