@@ -41,6 +41,12 @@
 #include <tier1/utlsymbollarge.h>
 #include <tier1/utlvector.h>
 
+#define INVALID_GAMEDATA_INDEX(map) \
+	decltype(map)::InvalidIndex()
+
+#define IS_VALID_GAMEDATA_INDEX(i, map) \
+	(i != INVALID_GAMEDATA_INDEX(map))
+
 class KeyValues3;
 
 class IGameData
@@ -210,7 +216,7 @@ namespace GameData
 
 					auto iFoundIndex = map.Find(aKey);
 
-					if(iFoundIndex != decltype(m_mapValues)::InvalidIndex())
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
 						auto &it = map.Element(iFoundIndex);
 
@@ -232,9 +238,7 @@ namespace GameData
 
 					auto iFoundIndex = map.Find(aKey);
 
-					bool bResult = iFoundIndex != decltype(m_mapValues)::InvalidIndex();
-
-					if(iFoundIndex != decltype(m_mapValues)::InvalidIndex())
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
 						auto &it = map.Element(iFoundIndex);
 
@@ -255,7 +259,7 @@ namespace GameData
 
 					auto iFoundIndex = map.Find(aKey);
 
-					bool bResult = iFoundIndex != decltype(m_mapValues)::InvalidIndex();
+					bool bResult = IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks);
 
 					if(bResult)
 					{
@@ -270,11 +274,9 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto &map = m_mapValues;
-
 					auto iFoundIndex = map.Find(aKey);
 
-					Assert(iFoundIndex != decltype(m_mapValues)::InvalidIndex());
+					Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks));
 
 					auto &itVec = map.Element(iFoundIndex);
 
@@ -314,7 +316,7 @@ namespace GameData
 
 				auto iFoundIndex = map.Find(aKey);
 
-				Assert(iFoundIndex != decltype(m_mapValues)::InvalidIndex());
+				Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues));
 
 				return map.Element(iFoundIndex);
 			}
@@ -334,7 +336,7 @@ namespace GameData
 
 				auto iFoundIndex = map.Find(aKey);
 
-				Assert(iFoundIndex != decltype(m_mapValues)::InvalidIndex());
+				Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues));
 
 				auto &it = map.Element(iFoundIndex);
 
@@ -363,7 +365,7 @@ namespace GameData
 			{
 				auto &vec = m_vecListeners;
 
-				const auto iInvalidIndex = decltype(m_vecListeners)::InvalidIndex();
+				const auto iInvalidIndex = INVALID_GAMEDATA_INDEX(m_vecListeners);
 
 				auto iFoundIndex = iInvalidIndex;
 
