@@ -32,6 +32,8 @@
 
 #include <functional>
 
+#include <tier0/platform.h>
+
 #include <tier0/bufferstring.h>
 #include <tier0/dbg.h>
 #include <tier1/utlmap.h>
@@ -57,13 +59,13 @@ namespace GameData
 		using Base = CBufferStringSection;
 		using Base::Base;
 
-		template<std::size_t N>
+		template<uintp N>
 		CBufferStringConcat(const char *(&pszSplit)[N])
 		{
 			AppendConcat(N, pszSplit, NULL);
 		}
 
-		template<std::size_t N>
+		template<uintp N>
 		CBufferStringConcat(const char *pszStartWtih, const char *(&pszSplit)[N])
 		{
 			Insert(0, pszStartWtih);

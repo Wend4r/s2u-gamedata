@@ -172,7 +172,7 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 
 	CUtlVector<CBufferStringConcat> vecSubMessages;
 
-	for(std::size_t n = 0, nSize = ARRAYSIZE(aSections); n < nSize; n++)
+	for(uintp n = 0, nSize = ARRAYSIZE(aSections); n < nSize; n++)
 	{
 		auto &aSection = aSections[n];
 
