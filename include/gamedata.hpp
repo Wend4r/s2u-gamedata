@@ -191,29 +191,37 @@ namespace GameData
 				}
 			}; // GameData::Config::Storage::ListenerCallbacksCollector
 
-			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<std::vector<OnCollectorChangedCallback>>
+			using ListenerMultipleCallbacksCollectorVector = CUtlVector<OnCollectorChangedCallback>;
+
+			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<ListenerMultipleCallbacksCollectorVector>
 			{
 			private:
-				using Base = BaseListenerCollector<std::vector<OnCollectorChangedCallback>>;
+				using BaseVector = ListenerMultipleCallbacksCollectorVector;
+				using Base = BaseListenerCollector<BaseVector>;
 				using Base::m_mapCallbacks;
 
 			public:
 				ListenerMultipleCallbacksCollector() = default;
 
 				// Adapter.
-				void Insert(const K &aKey, const std::vector<OnCollectorChangedCallback> &vecCallbacks) override
+				void Insert(const K &aKey, const BaseVector &vecCallbacks) override
 				{
 					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					if(it != map.cend())
+					if(iFoundIndex != decltype(m_mapValues)::InvalidIndex())
 					{
-						it.insert(it.end(), vecCallbacks.begin(), vecCallbacks.end());
+						auto &it = map.Element(iFoundIndex);
+
+						it.AddVectorToTail(vecCallbacks);
 					}
 					else
 					{
-						map[aKey] = vecCallbacks;
+						BaseVector vecNewOne;
+
+						vecNewOne.AddVectorToTail(vecCallbacks);
+						map.Insert(vecNewOne);
 					}
 				}
 
@@ -222,15 +230,22 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					if(it != map.cend())
+					bool bResult = iFoundIndex != decltype(m_mapValues)::InvalidIndex();
+
+					if(iFoundIndex != decltype(m_mapValues)::InvalidIndex())
 					{
-						it.second.push_back(funcCallback);
+						auto &it = map.Element(iFoundIndex);
+
+						it.AddToTail(funcCallback);
 					}
 					else
 					{
-						map[aKey] = {funcCallback};
+						BaseVector vecNewOne;
+
+						vecNewOne.AddToTail(funcCallback);
+						map.Insert(vecNewOne);
 					}
 				}
 
@@ -238,13 +253,13 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					const auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					bool bResult = it != map.cend();
+					bool bResult = iFoundIndex != decltype(m_mapValues)::InvalidIndex();
 
 					if(bResult)
 					{
-						map.erase(it);
+						map.RemoveAt(iFoundIndex);
 					}
 
 					return bResult;
@@ -255,16 +270,19 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto &map = m_mapValues;
 
-					if(it != map.cend())
+					auto iFoundIndex = map.Find(aKey);
+
+					Assert(iFoundIndex != decltype(m_mapValues)::InvalidIndex());
+
+					auto &itVec = map.Element(iFoundIndex);
+
+					FOR_EACH_VEC(itVec, i)
 					{
-						auto &vec = it.second;
+						auto &it = itVec[i];
 
-						for(size_t n = 0, nLength = vec.size(); n < nLength; n++)
-						{
-							vec[n](aKey, aValue);
-						}
+						it(aKey, aValue);
 					}
 				}
 			}; // GameData::Config::Storage::ListenerMultipleCallbacksCollector
@@ -296,7 +314,7 @@ namespace GameData
 
 				auto iFoundIndex = map.Find(aKey);
 
-				Assert(iFoundIndex != decltype(map)::InvalidIndex());
+				Assert(iFoundIndex != decltype(m_mapValues)::InvalidIndex());
 
 				return map.Element(iFoundIndex);
 			}
@@ -316,12 +334,12 @@ namespace GameData
 
 				auto iFoundIndex = map.Find(aKey);
 
-				Assert(iFoundIndex != decltype(map)::InvalidIndex());
+				Assert(iFoundIndex != decltype(m_mapValues)::InvalidIndex());
 
 				auto &it = map.Element(iFoundIndex);
 
 				it = aValue;
-				OnChanged(aKey, aValue);
+				OnChanged(aKey, it);
 			}
 
 		private:
