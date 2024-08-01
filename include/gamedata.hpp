@@ -30,14 +30,13 @@
 #include <dynlibutils/module.hpp>
 #include <dynlibutils/memaddr.hpp>
 
-#include <cstddef>
 #include <functional>
-#include <map>
-#include <utility>
-#include <string>
-#include <vector>
 
 #include <tier0/bufferstring.h>
+#include <tier0/dbg.h>
+#include <tier1/utlmap.h>
+#include <tier1/utlrbtree.h>
+#include <tier1/utlsymbollarge.h>
 #include <tier1/utlvector.h>
 
 class KeyValues3;
@@ -45,7 +44,7 @@ class KeyValues3;
 class IGameData
 {
 public:
-	virtual const DynLibUtils::CModule *FindLibrary(const std::string &sName) const = 0;
+	virtual const DynLibUtils::CModule *FindLibrary(CUtlSymbolLarge sName) const = 0;
 }; // IGameData
 
 namespace GameData
@@ -112,7 +111,6 @@ namespace GameData
 				virtual void OnChanged(const K &aKey, const V &aValue) = 0;
 			}; // GameData::Config::Storage::IListener
 
-			Storage() = default;
 			Storage(IListener *pFirstListener)
 			{
 				m_vecListeners.push_back(pFirstListener);
@@ -128,6 +126,12 @@ namespace GameData
 				using Base = IListener; // Root interface.
 
 			public:
+				BaseListenerCollector()
+				 :  m_mapCallbacks(CDefOps<CUtlSymbolLarge>::LessFunc)
+				{
+				}
+
+			public:
 				virtual void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) = 0;
 				virtual bool Remove(const K &aKey) = 0;
 
@@ -137,7 +141,7 @@ namespace GameData
 				}
 
 			protected:
-				std::unordered_map<K, T> m_mapCallbacks;
+				CUtlMap<K, T> m_mapCallbacks;
 			}; // GameData::Config::Storage::BaseListenerCollector
 
 			class ListenerCallbacksCollector : public BaseListenerCollector<OnCollectorChangedCallback>
@@ -266,23 +270,33 @@ namespace GameData
 		public:
 			void ClearValues()
 			{
-				m_mapValues.clear();
+				m_mapValues.Purge();
 			}
 
 			void ClearListeners()
 			{
-				m_vecListeners.clear();
+				m_vecListeners.Purge();
 			}
 
 		public:
 			const V &operator[](const K &aKey) const
 			{
-				return m_mapValues[aKey];
+				auto &map = m_mapValues;
+
+				auto iFoundIndex = map.Find(aKey);
+
+				return map.Element(iFoundIndex);
 			}
 
 			const V &Get(const K &aKey) const
 			{
-				return m_mapValues.at(aKey);
+				auto &map = m_mapValues;
+
+				auto iFoundIndex = map.Find(aKey);
+
+				Assert(iFoundIndex != decltype(map)::InvalidIndex());
+
+				return map.Element(iFoundIndex);
 			}
 
 			void TriggerCallbacks()
@@ -296,8 +310,15 @@ namespace GameData
 		protected:
 			void Set(const K &aKey, const V &aValue)
 			{
-				m_mapValues[aKey] = aValue;
+				auto &map = m_mapValues;
 
+				auto iFoundIndex = map.Find(aKey);
+
+				Assert(iFoundIndex != decltype(map)::InvalidIndex());
+
+				auto &it = map.Element(iFoundIndex);
+
+				it = aValue;
 				OnChanged(aKey, aValue);
 			}
 
@@ -315,37 +336,50 @@ namespace GameData
 		public:
 			virtual void AddListener(IListener *pListener)
 			{
-				m_vecListeners.push_back(pListener);
+				m_vecListeners.AddToTail(pListener);
 			}
 
 			virtual bool RemoveListener(IListener *pListener)
 			{
 				auto &vec = m_vecListeners;
 
-				auto it = std::find(vec.begin(), vec.end(), pListener);
+				const auto iInvalidIndex = decltype(m_vecListeners)::InvalidIndex();
 
-				bool bResult = it != vec.cend();
+				auto iFoundIndex = iInvalidIndex;
+
+				FOR_EACH_VEC(vec, i)
+				{
+					auto &it = vec[i];
+
+					if(it == pListener)
+					{
+						iFoundIndex = i;
+
+						break;
+					}
+				}
+
+				bool bResult = iFoundIndex != iInvalidIndex;
 
 				if(bResult)
 				{
-					vec.erase(it);
+					vec.FastRemove(iFoundIndex);
 				}
 
 				return bResult;
 			}
 
 		private:
-			std::map<K, V> m_mapValues;
-			std::vector<IListener *> m_vecListeners;
+			CUtlMap<K, V> m_mapValues;
+			CUtlVector<IListener *> m_vecListeners;
 		}; // GameData::Config::Storage
 
 	public:
-		using Addresses = Storage<std::string, DynLibUtils::CMemory>;
-		using Offsets = Storage<std::string, ptrdiff_t>;
+		using Addresses = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
+		using Offsets = Storage<CUtlSymbolLarge, ptrdiff_t>;
 
 	public:
-		Config() = default;
-		Config(Addresses aInitAddressStorage, Offsets aInitOffsetsStorage);
+		Config(const Addresses &aInitAddressStorage, const Offsets &aInitOffsetsStorage);
 
 	public:
 		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CUtlVector<CBufferStringConcat> &vecMessages);
@@ -366,12 +400,12 @@ namespace GameData
 		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CUtlVector<CBufferStringConcat> &vecMessages);
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(const std::string &sName) const;
-		const ptrdiff_t &GetOffset(const std::string &sName) const;
+		const DynLibUtils::CMemory &GetAddress(CUtlSymbolLarge sName) const;
+		const ptrdiff_t &GetOffset(CUtlSymbolLarge sName) const;
 
 	protected:
-		void SetAddress(const std::string &sName, DynLibUtils::CMemory aMemory);
-		void SetOffset(const std::string &sName, ptrdiff_t nValue);
+		void SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory);
+		void SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue);
 
 	private:
 		Addresses m_aAddressStorage;

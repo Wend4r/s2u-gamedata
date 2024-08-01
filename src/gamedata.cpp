@@ -104,7 +104,7 @@ ptrdiff_t GameData::ReadOffset(const char *pszValue)
 	return static_cast<ptrdiff_t>(strtol(pszValue, NULL, 0));
 }
 
-GameData::Config::Config(Addresses aAddressStorage, Offsets aOffsetsStorage)
+GameData::Config::Config(const Addresses &aAddressStorage, const Offsets &aOffsetsStorage)
  :  m_aAddressStorage(aAddressStorage), 
     m_aOffsetStorage(aOffsetsStorage)
 {
@@ -483,22 +483,22 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 	return true;
 }
 
-const DynLibUtils::CMemory &GameData::Config::GetAddress(const std::string &sName) const
+const DynLibUtils::CMemory &GameData::Config::GetAddress(CUtlSymbolLarge sName) const
 {
 	return m_aAddressStorage.Get(sName);
 }
 
-const ptrdiff_t &GameData::Config::GetOffset(const std::string &sName) const
+const ptrdiff_t &GameData::Config::GetOffset(CUtlSymbolLarge sName) const
 {
 	return m_aOffsetStorage.Get(sName);
 }
 
-void GameData::Config::SetAddress(const std::string &sName, DynLibUtils::CMemory aMemory)
+void GameData::Config::SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory)
 {
 	m_aAddressStorage.Set(sName, aMemory);
 }
 
-void GameData::Config::SetOffset(const std::string &sName, ptrdiff_t nValue)
+void GameData::Config::SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue)
 {
 	m_aOffsetStorage.Set(sName, nValue);
 }
