@@ -42,9 +42,6 @@ class IServerGameDLL;
 DLL_IMPORT IVEngineServer *engine;
 DLL_IMPORT IServerGameDLL *server;
 
-DynLibUtils::CModule g_aLibEngine, 
-                     g_aLibServer;
-
 const char *GameData::GetSourceEngineName()
 {
 #if SOURCE_ENGINE == SE_CS2
