@@ -121,7 +121,8 @@ namespace GameData
 				virtual void OnChanged(const K &aKey, const V &aValue) = 0;
 			}; // GameData::Config::Storage::IListener
 
-			Storage(IListener *pFirstListener)
+			Storage() = default;
+			explicit Storage(IListener *pFirstListener)
 			{
 				m_vecListeners.AddToTail(pFirstListener);
 			}
@@ -417,7 +418,8 @@ namespace GameData
 		using Offsets = Storage<CUtlSymbolLarge, ptrdiff_t>;
 
 	public:
-		Config(const Addresses &aInitAddressStorage, const Offsets &aInitOffsetsStorage);
+		Config() = default;
+		explicit Config(const Addresses &aInitAddressStorage, const Offsets &aInitOffsetsStorage);
 
 	public:
 		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages);
