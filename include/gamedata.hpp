@@ -79,6 +79,8 @@ namespace GameData
 		}
 	}; // GameData::CBufferStringConcat
 
+	using CBufferStringVector = CUtlVector<CBufferStringConcat>;
+
 	static const char *GetSourceEngineName();
 
 	enum Platform : int
@@ -418,7 +420,7 @@ namespace GameData
 		Config(const Addresses &aInitAddressStorage, const Offsets &aInitOffsetsStorage);
 
 	public:
-		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CUtlVector<CBufferStringConcat> &vecMessages);
+		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages);
 		void ClearValues();
 
 	public:
@@ -426,14 +428,14 @@ namespace GameData
 		Offsets &GetOffsets();
 
 	protected:
-		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CUtlVector<CBufferStringConcat> &vecMessages);
+		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);
 
-		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CUtlVector<CBufferStringConcat> &vecMessages);
-		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CUtlVector<CBufferStringConcat> &vecMessages);
+		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages);
+		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages);
 
 		// Step #2 - addresses.
-		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CUtlVector<CBufferStringConcat> &vecMessages);
-		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CUtlVector<CBufferStringConcat> &vecMessages);
+		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferStringVector &vecMessages);
+		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
 
 	public:
 		const DynLibUtils::CMemory &GetAddress(CUtlSymbolLarge sName) const;

@@ -110,7 +110,7 @@ GameData::Config::Config(const Addresses &aAddressStorage, const Offsets &aOffse
 {
 }
 
-bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CUtlVector<CBufferStringConcat> &vecMessages)
+bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages)
 {
 	const char *pszEngineName = GameData::GetSourceEngineName();
 
@@ -148,12 +148,12 @@ GameData::Config::Offsets &GameData::Config::GetOffsets()
 	return m_aOffsetStorage;
 }
 
-bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CUtlVector<CBufferStringConcat> &vecMessages)
+bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages)
 {
 	struct
 	{
 		CKV3MemberName aMember;
-		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, CUtlVector<CBufferStringConcat> &vecMessages);
+		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, CBufferStringVector &vecMessages);
 	} aSections[] =
 	{
 		{
@@ -170,7 +170,7 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 		}
 	};
 
-	CUtlVector<CBufferStringConcat> vecSubMessages;
+	CBufferStringVector vecSubMessages;
 
 	for(uintp n = 0, nSize = ARRAYSIZE(aSections); n < nSize; n++)
 	{
@@ -200,7 +200,7 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 	return true;
 }
 
-bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CUtlVector<CBufferStringConcat> &vecMessages)
+bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages)
 {
 	int iMemberCount = pSignaturesValues->GetMemberCount();
 
@@ -281,7 +281,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 	return true;
 }
 
-bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CUtlVector<CBufferStringConcat> &vecMessages)
+bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages)
 {
 	int iMemberCount = pOffsetsValues->GetMemberCount();
 
@@ -324,7 +324,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 	return true;
 }
 
-bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CUtlVector<CBufferStringConcat> &vecMessages)
+bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferStringVector &vecMessages)
 {
 	int iMemberCount = pAddressesValues->GetMemberCount();
 
@@ -341,7 +341,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 	const char *pszSignatureKey = "signature";
 
-	CUtlVector<CBufferStringConcat> vecSubMessages;
+	CBufferStringVector vecSubMessages;
 
 	do
 	{
@@ -417,7 +417,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 	return true;
 }
 
-bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CUtlVector<CBufferStringConcat> &vecMessages)
+bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CBufferStringVector &vecMessages)
 {
 	int iMemberCount = pActionsValues->GetMemberCount();
 
