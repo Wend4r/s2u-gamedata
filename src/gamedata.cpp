@@ -81,19 +81,19 @@ const char *GameData::GetCurrentPlatformName()
 
 const char *GameData::GetPlatformName(Platform eElm)
 {
-	const char *sPlatformNames[Platform::PLAT_MAX] =
+	static const char *s_pszPlatformNames[Platform::PLAT_MAX] =
 	{
 		"windows",
-		"windows64",
+		"win64",
 
 		"linux",
-		"linux64",
+		"linuxsteamrt64",
 
 		"mac",
 		"mac64"
 	};
 
-	return sPlatformNames[eElm];
+	return s_pszPlatformNames[eElm];
 }
 
 ptrdiff_t GameData::ReadOffset(const char *pszValue)
