@@ -228,6 +228,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszLibraryKey, "\" key ", "at \"", pszSigName, "\""};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
@@ -241,6 +242,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 			const char *pszMessageConcat[] = {"Unknown \"", pszLibraryName, "\" library ", "at \"", pszSigName, "\""};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
@@ -252,6 +254,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "platform ", "(\"", pszPlatformKey, "\" key) ", "at \"", pszSigName, "\""};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
@@ -265,6 +268,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszSigName, "\""};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
@@ -308,6 +312,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 			const char *pszMessageConcat[] = {"Failed to ", "get ", " platform ", "(\"", pszPlatformKey, "\" key)", "at \"", pszOffsetName, "\""};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
@@ -353,6 +358,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" key ", "at \"", pszAddressName, "\""};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
@@ -366,6 +372,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" signature ", "in \"", pszAddressName, "\""};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
@@ -401,6 +408,8 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 				vecMessages.AddToTail(pszSubMessageConcat);
 			}
+
+			i++;
 
 			continue;
 		}
@@ -456,6 +465,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 				const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" read key"};
 
 				vecMessages.AddToTail(pszMessageConcat);
+				i++;
 
 				continue;
 			}
@@ -469,6 +479,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 			const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" key"};
 
 			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
 			continue;
 		}
