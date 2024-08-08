@@ -121,7 +121,11 @@ namespace GameData
 				virtual void OnChanged(const K &aKey, const V &aValue) = 0;
 			}; // GameData::Config::Storage::IListener
 
-			Storage() = default;
+			Storage()
+			 :  m_mapValues(CDefOps<K>::LessFunc)
+			{
+			}
+
 			explicit Storage(IListener *pFirstListener)
 			{
 				m_vecListeners.AddToTail(pFirstListener);
