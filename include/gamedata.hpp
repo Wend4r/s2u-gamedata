@@ -353,12 +353,18 @@ namespace GameData
 
 				auto iFoundIndex = map.Find(aKey);
 
-				Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues));
+				if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues))
+				{
+					auto &it = map.Element(iFoundIndex);
 
-				auto &it = map.Element(iFoundIndex);
+					it = aValue;
+				}
+				else
+				{
+					map.Insert(aKey, aValue);
+				}
 
-				it = aValue;
-				OnChanged(aKey, it);
+				OnChanged(aKey, aValue);
 			}
 
 		private:
