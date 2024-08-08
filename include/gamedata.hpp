@@ -36,9 +36,9 @@
 
 #include <tier0/bufferstring.h>
 #include <tier0/dbg.h>
+#include <tier0/utlbinaryblock.h>
 #include <tier1/utlmap.h>
 #include <tier1/utlrbtree.h>
-#include <tier1/utlsymbollarge.h>
 #include <tier1/utlvector.h>
 
 #define INVALID_GAMEDATA_INDEX(map) \
@@ -52,7 +52,7 @@ class KeyValues3;
 class IGameData
 {
 public:
-	virtual const DynLibUtils::CModule *FindLibrary(CUtlSymbolLarge sName) const = 0;
+	virtual const DynLibUtils::CModule *FindLibrary(CUtlBinaryBlock aName) const = 0;
 }; // IGameData
 
 namespace GameData
@@ -80,6 +80,15 @@ namespace GameData
 	}; // GameData::CBufferStringConcat
 
 	using CBufferStringVector = CUtlVector<CBufferStringConcat>;
+
+	class CDefOpsStringBinaryBlock
+	{
+	public:
+		static bool LessFunc(const CUtlBinaryBlock &lhs, const CUtlBinaryBlock &rhs)
+		{
+			return StringLessThan((const char *)lhs.Get(), (const char *)rhs.Get());
+		}
+	};
 
 	static const char *GetSourceEngineName();
 
@@ -122,7 +131,7 @@ namespace GameData
 			}; // GameData::Config::Storage::IListener
 
 			Storage()
-			 :  m_mapValues(CDefOps<K>::LessFunc)
+			 :  m_mapValues(CDefOpsStringBinaryBlock::LessFunc)
 			{
 			}
 
@@ -142,7 +151,7 @@ namespace GameData
 
 			public:
 				BaseListenerCollector()
-				 :  m_mapCallbacks(CDefOps<CUtlSymbolLarge>::LessFunc)
+				 :  m_mapCallbacks(CDefOpsStringBinaryBlock::LessFunc)
 				{
 				}
 
@@ -213,6 +222,8 @@ namespace GameData
 					Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks));
 
 					auto &it = map.Element(iFoundIndex);
+
+					Msg("type of it = %s (%p), type of key = %s, aKey = \"%s\"\n", typeid(it).name(), &it, typeid(map.Key(iFoundIndex)).name(), aKey.Get());
 
 					it(aKey, aValue);
 				}
@@ -424,8 +435,8 @@ namespace GameData
 		}; // GameData::Config::Storage
 
 	public:
-		using Addresses = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
-		using Offsets = Storage<CUtlSymbolLarge, ptrdiff_t>;
+		using Addresses = Storage<CUtlBinaryBlock, DynLibUtils::CMemory>;
+		using Offsets = Storage<CUtlBinaryBlock, ptrdiff_t>;
 
 	public:
 		Config() = default;
@@ -450,12 +461,12 @@ namespace GameData
 		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(CUtlSymbolLarge sName) const;
-		const ptrdiff_t &GetOffset(CUtlSymbolLarge sName) const;
+		const DynLibUtils::CMemory &GetAddress(const char *pszName) const;
+		const ptrdiff_t &GetOffset(const char *pszName) const;
 
 	protected:
-		void SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory);
-		void SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue);
+		void SetAddress(const char *pszName, DynLibUtils::CMemory aMemory);
+		void SetOffset(const char *pszName, ptrdiff_t nValue);
 
 	private:
 		Addresses m_aAddressStorage;
