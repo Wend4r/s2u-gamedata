@@ -212,11 +212,12 @@ namespace GameData
 
 					auto iFoundIndex = map.Find(aKey);
 
-					Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks));
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
+					{
+						auto &it = map.Element(iFoundIndex);
 
-					auto &it = map.Element(iFoundIndex);
-
-					it(aKey, aValue);
+						it(aKey, aValue);
+					}
 				}
 			}; // GameData::Config::Storage::ListenerCallbacksCollector
 
