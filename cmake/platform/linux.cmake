@@ -1,5 +1,7 @@
 # Warnings
 set(PLATFORM_COMPILER_OPTIONS
+	${PLATFORM_COMPILER_OPTIONS}
+
 	-Wall -Wno-uninitialized -Wno-switch -Wno-unused
 	-Wno-conversion-null -Wno-write-strings
 	-Wno-invalid-offsetof -Wno-reorder
@@ -12,5 +14,7 @@ set(PLATFORM_COMPILER_OPTIONS
 
 set(PLATFORM_LINKER_OPTIONS)
 set(PLATFORM_COMPILE_DEFINITIONS
+	${PLATFORM_COMPILE_DEFINITIONS}
+
 	-D_GLIBCXX_USE_CXX11_ABI=0
 )

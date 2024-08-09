@@ -22,38 +22,67 @@
 #ifndef _INCLUDE_GAMEDATA_HPP_
 #define _INCLUDE_GAMEDATA_HPP_
 
+#define MAX_GAMEDATA_SECTION_MESSAGE_LENGTH 256
+#define MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH MAX_GAMEDATA_SECTION_MESSAGE_LENGTH
+#define MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
+#define MAX_GAMEDATA_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
+
 #include <dynlibutils/module.hpp>
 #include <dynlibutils/memaddr.hpp>
 
 #include <stddef.h>
 
 #include <functional>
-#include <map>
-#include <utility>
-#include <string>
-#include <vector>
 
-class KeyValues;
+#include <tier0/platform.h>
+
+#include <tier0/bufferstring.h>
+#include <tier0/dbg.h>
+#include <tier1/utlsymbollarge.h>
+#include <tier1/utlmap.h>
+#include <tier1/utlrbtree.h>
+#include <tier1/utlvector.h>
+
+#define INVALID_GAMEDATA_INDEX(map) \
+	decltype(map)::InvalidIndex()
+
+#define IS_VALID_GAMEDATA_INDEX(i, map) \
+	(i != INVALID_GAMEDATA_INDEX(map))
+
+class KeyValues3;
 
 class IGameData
 {
 public:
-	virtual const DynLibUtils::CModule *FindLibrary(std::string sName) const = 0;
+	virtual const DynLibUtils::CModule *FindLibrary(const char *pszName) const = 0;
 }; // IGameData
 
-class GameData : public IGameData
+namespace GameData
 {
-	using This = GameData;
+	using CBufferStringSection = CBufferStringGrowable<MAX_GAMEDATA_SECTION_MESSAGE_LENGTH>;
 
-public:
-	bool Init(char *psError, size_t nMaxLength);
-	void Clear();
-	void Destroy();
+	class CBufferStringConcat : public CBufferStringSection
+	{
+	public:
+		using Base = CBufferStringSection;
+		using Base::Base;
 
-public: // IGameData
-	const DynLibUtils::CModule *FindLibrary(std::string sName) const;
+		template<uintp N>
+		CBufferStringConcat(const char *(&pszSplit)[N])
+		{
+			AppendConcat(N, pszSplit, NULL);
+		}
 
-protected:
+		template<uintp N>
+		CBufferStringConcat(const char *pszStartWtih, const char *(&pszSplit)[N])
+		{
+			Insert(0, pszStartWtih);
+			AppendConcat(N, pszSplit, NULL);
+		}
+	}; // GameData::CBufferStringConcat
+
+	using CBufferStringVector = CUtlVector<CBufferStringConcat>;
+
 	static const char *GetSourceEngineName();
 
 	enum Platform : int
@@ -79,7 +108,6 @@ protected:
 
 	static ptrdiff_t ReadOffset(const char *pszValue);
 
-public:
 	class Config
 	{
 	public:
@@ -95,10 +123,14 @@ public:
 				virtual void OnChanged(const K &aKey, const V &aValue) = 0;
 			}; // GameData::Config::Storage::IListener
 
-			Storage() = default;
-			Storage(IListener *pFirstListener)
+			Storage()
+			 :  m_mapValues(DefLessFunc(const CUtlSymbolLarge))
 			{
-				this->m_vecListeners.push_back(pFirstListener);
+			}
+
+			explicit Storage(IListener *pFirstListener)
+			{
+				m_vecListeners.AddToTail(pFirstListener);
 			}
 
 		public:
@@ -108,8 +140,13 @@ public:
 			class BaseListenerCollector : public IListener
 			{
 			private:
-				using Super = IListener; // Root interface.
-				using This = BaseListenerCollector;
+				using Base = IListener; // Root interface.
+
+			public:
+				BaseListenerCollector()
+				 :  m_mapCallbacks(DefLessFunc(const CUtlSymbolLarge))
+				{
+				}
 
 			public:
 				virtual void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) = 0;
@@ -117,18 +154,18 @@ public:
 
 				virtual void RemoveAll()
 				{
-					this->m_mapCallbacks.clear();
+					m_mapCallbacks.Purge();
 				}
 
 			protected:
-				std::unordered_map<K, T> m_mapCallbacks;
+				CUtlMap<K, T> m_mapCallbacks;
 			}; // GameData::Config::Storage::BaseListenerCollector
 
 			class ListenerCallbacksCollector : public BaseListenerCollector<OnCollectorChangedCallback>
 			{
 			private:
-				using Super = BaseListenerCollector<OnCollectorChangedCallback>;
-				using This = ListenerCallbacksCollector;
+				using Base = BaseListenerCollector<OnCollectorChangedCallback>;
+				using Base::m_mapCallbacks;
 
 			public:
 				ListenerCallbacksCollector() = default;
@@ -136,20 +173,33 @@ public:
 			public: // BaseListenerCollector<>
 				void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) override
 				{
-					this->m_mapCallbacks[aKey] = funcCallback;
+					auto &map = m_mapCallbacks;
+
+					auto iFoundIndex = map.Find(aKey);
+
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
+					{
+						auto &it = map.Element(iFoundIndex);
+
+						it = funcCallback;
+					}
+					else
+					{
+						map.Insert(aKey, funcCallback);
+					}
 				}
 
 				bool Remove(const K &aKey) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
-					const auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					bool bResult = it != map.cend();
+					bool bResult = IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks);
 
 					if(bResult)
 					{
-						map.erase(it);
+						map.RemoveAt(iFoundIndex);
 					}
 
 					return bResult;
@@ -158,71 +208,86 @@ public:
 			public: // IListener
 				void OnChanged(const K &aKey, const V &aValue) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					if(it != map.cend())
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
-						(it->second)(aKey, aValue);
+						auto &it = map.Element(iFoundIndex);
+
+						it(aKey, aValue);
 					}
 				}
 			}; // GameData::Config::Storage::ListenerCallbacksCollector
 
-			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<std::vector<OnCollectorChangedCallback>>
+			using ListenerMultipleCallbacksCollectorVector = CUtlVector<OnCollectorChangedCallback>;
+
+			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<ListenerMultipleCallbacksCollectorVector>
 			{
 			private:
-				using Super = BaseListenerCollector<std::vector<OnCollectorChangedCallback>>;
-				using This = ListenerMultipleCallbacksCollector;
+				using BaseVector = ListenerMultipleCallbacksCollectorVector;
+				using Base = BaseListenerCollector<BaseVector>;
+				using Base::m_mapCallbacks;
 
 			public:
 				ListenerMultipleCallbacksCollector() = default;
 
 				// Adapter.
-				void Insert(const K &aKey, const std::vector<OnCollectorChangedCallback> &vecCallbacks) override
+				void Insert(const K &aKey, const BaseVector &vecCallbacks) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					if(it != map.cend())
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
-						it.insert(it.end(), vecCallbacks.begin(), vecCallbacks.end());
+						auto &it = map.Element(iFoundIndex);
+
+						it.AddVectorToTail(vecCallbacks);
 					}
 					else
 					{
-						map[aKey] = vecCallbacks;
+						BaseVector vecNewOne;
+
+						vecNewOne.AddVectorToTail(vecCallbacks);
+						map.Insert(vecNewOne);
 					}
 				}
 
 			public: // BaseListenerCollector<>
 				void Insert(K aKey, OnCollectorChangedCallback funcCallback) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					if(it != map.cend())
+					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
-						it.second.push_back(funcCallback);
+						auto &it = map.Element(iFoundIndex);
+
+						it.AddToTail(funcCallback);
 					}
 					else
 					{
-						map[aKey] = {funcCallback};
+						BaseVector vecNewOne;
+
+						vecNewOne.AddToTail(funcCallback);
+						map.Insert(vecNewOne);
 					}
 				}
 
 				bool Remove(K aKey)
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
-					const auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					bool bResult = it != map.cend();
+					bool bResult = IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks);
 
 					if(bResult)
 					{
-						map.erase(it);
+						map.RemoveAt(iFoundIndex);
 					}
 
 					return bResult;
@@ -231,18 +296,19 @@ public:
 			public: // IListener
 				void OnChanged(const K &aKey, const V &aValue) override
 				{
-					auto &map = this->m_mapCallbacks;
+					auto &map = m_mapCallbacks;
 
-					auto it = map.find(aKey);
+					auto iFoundIndex = map.Find(aKey);
 
-					if(it != map.cend())
+					Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks));
+
+					auto &itVec = map.Element(iFoundIndex);
+
+					FOR_EACH_VEC(itVec, i)
 					{
-						auto &vec = it.second;
+						auto &it = itVec[i];
 
-						for(size_t n = 0, nLength = vec.size(); n < nLength; n++)
-						{
-							vec[n](aKey, aValue);
-						}
+						it(aKey, aValue);
 					}
 				}
 			}; // GameData::Config::Storage::ListenerMultipleCallbacksCollector
@@ -250,45 +316,68 @@ public:
 		public:
 			void ClearValues()
 			{
-				this->m_mapValues.clear();
+				m_mapValues.Purge();
 			}
 
 			void ClearListeners()
 			{
-				this->m_vecListeners.clear();
+				m_vecListeners.Purge();
 			}
 
 		public:
 			const V &operator[](const K &aKey) const
 			{
-				return this->m_mapValues.at(aKey);
+				auto &map = m_mapValues;
+
+				auto iFoundIndex = map.Find(aKey);
+
+				return map.Element(iFoundIndex);
 			}
 
 			const V &Get(const K &aKey) const
 			{
-				return this->operator[](aKey);
+				auto &map = m_mapValues;
+
+				auto iFoundIndex = map.Find(aKey);
+
+				Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues));
+
+				return map.Element(iFoundIndex);
 			}
 
 			void TriggerCallbacks()
 			{
-				for(auto const &[aKey, aVal] : this->m_mapValues)
+				for(auto const &[aKey, aVal] : m_mapValues)
 				{
-					this->OnChanged(aKey, aVal);
+					OnChanged(aKey, aVal);
 				}
 			}
 
 		protected:
 			void Set(const K &aKey, const V &aValue)
 			{
-				this->m_mapValues[aKey] = aValue;
+				auto &map = m_mapValues;
 
-				this->OnChanged(aKey, aValue);
+				auto iFoundIndex = map.Find(aKey);
+
+				if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues))
+				{
+					auto &it = map.Element(iFoundIndex);
+
+					it = aValue;
+				}
+				else
+				{
+					map.Insert(aKey, aValue);
+				}
+
+				OnChanged(aKey, aValue);
 			}
 
 		private:
 			void OnChanged(const K &aKey, const V &aValue)
 			{
-				auto &vec = this->m_vecListeners;
+				auto &vec = m_vecListeners;
 
 				for(const auto it : vec)
 				{
@@ -299,73 +388,88 @@ public:
 		public:
 			virtual void AddListener(IListener *pListener)
 			{
-				this->m_vecListeners.push_back(pListener);
+				m_vecListeners.AddToTail(pListener);
 			}
 
 			virtual bool RemoveListener(IListener *pListener)
 			{
-				auto &vec = this->m_vecListeners;
+				auto &vec = m_vecListeners;
 
-				auto it = std::find(vec.begin(), vec.end(), pListener);
+				const auto iInvalidIndex = INVALID_GAMEDATA_INDEX(m_vecListeners);
 
-				bool bResult = it != vec.cend();
+				auto iFoundIndex = iInvalidIndex;
+
+				FOR_EACH_VEC(vec, i)
+				{
+					auto &it = vec[i];
+
+					if(it == pListener)
+					{
+						iFoundIndex = i;
+
+						break;
+					}
+				}
+
+				bool bResult = iFoundIndex != iInvalidIndex;
 
 				if(bResult)
 				{
-					vec.erase(it);
+					vec.FastRemove(iFoundIndex);
 				}
 
 				return bResult;
 			}
 
 		private:
-			std::map<K, V> m_mapValues;
-			std::vector<IListener *> m_vecListeners;
+			CUtlMap<K, V> m_mapValues;
+			CUtlVector<IListener *> m_vecListeners;
 		}; // GameData::Config::Storage
 
 	public:
-		using Addresses = Storage<std::string, DynLibUtils::CMemory>;
-		using Offsets = Storage<std::string, ptrdiff_t>;
+		using Addresses = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
+		using Offsets = Storage<CUtlSymbolLarge, ptrdiff_t>;
 
 	public:
 		Config() = default;
-		Config(Addresses aInitAddressStorage, Offsets aInitOffsetsStorage);
+		explicit Config(const Addresses &aInitAddressStorage, const Offsets &aInitOffsetsStorage);
 
 	public:
-		bool Load(IGameData *pRoot, KeyValues *pGameConfig, char *psError = NULL, size_t nMaxLength = 0);
+		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages);
 		void ClearValues();
 
 	public:
 		Addresses &GetAddresses();
 		Offsets &GetOffsets();
 
-		void TriggerCallbacks();
-
 	protected:
-		bool LoadEngine(IGameData *pRoot, KeyValues *pEngineValues, char *psError = NULL, size_t nMaxLength = 0);
+		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);
 
-		bool LoadEngineSignatures(IGameData *pRoot, KeyValues *pSignaturesValues, char *psError = NULL, size_t nMaxLength = 0);
-		bool LoadEngineOffsets(KeyValues *pOffsetsValues, char *psError = NULL, size_t nMaxLength = 0);
+		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages);
+		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages);
 
 		// Step #2 - addresses.
-		bool LoadEngineAddresses(KeyValues *pAddressesValues, char *psError = NULL, size_t nMaxLength = 0);
-		bool LoadEngineAddressActions(uintptr_t &pAddrCur, KeyValues *pActionValues, char *psError = NULL, size_t nMaxLength = 0);
+		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferStringVector &vecMessages);
+		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(const std::string &sName) const;
-		const ptrdiff_t &GetOffset(const std::string &sName) const;
+		CUtlSymbolLarge GetSymbol(const char *pszText);
+		CUtlSymbolLarge FindSymbol(const char *pszText) const;
+
+	public:
+		const DynLibUtils::CMemory &GetAddress(CUtlSymbolLarge sName) const;
+		const ptrdiff_t &GetOffset(CUtlSymbolLarge sName) const;
 
 	protected:
-		void SetAddress(const std::string &sName, DynLibUtils::CMemory aMemory);
-		void SetOffset(const std::string &sName, ptrdiff_t nValue);
+		void SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory);
+		void SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue);
 
 	private:
+		CUtlSymbolTableLarge_CI m_aSymbolTable;
+
 		Addresses m_aAddressStorage;
 		Offsets m_aOffsetStorage;
 	}; // GameData::Config
-
-private:
-	std::map<std::string, const DynLibUtils::CModule *> m_aLibraryMap;
 }; // GameData
 
 #endif //_INCLUDE_GAMEDATA_HPP_

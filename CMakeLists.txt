@@ -5,20 +5,22 @@ if(POLICY CMP0092)
 endif()
 
 project(gamedata
-	VERSION 1.0.0
+	VERSION 1.0.1
 	DESCRIPTION "GameData"
 	HOMEPAGE_URL "https://github.com/Wend4r/s2u-gamedata"
 	LANGUAGES C CXX
 )
 
-if(NOT DYNLIBUTILS_DIR)
-	message(WARNING "DYNLIBUTILS_DIR is empty")
-	set(DYNLIBUTILS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../memory_utils)
+if(DYNLIBUTILS_DIR)
+	file(TO_CMAKE_PATH "${DYNLIBUTILS_DIR}" DYNLIBUTILS_DIR)
+else()
+	set(DYNLIBUTILS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/memory_utils")
 endif()
 
-if(NOT SOURCESDK_DIR)
-	message(WARNING "SOURCESDK_DIR is empty")
-	set(SOURCESDK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../hl2sdk-wend4r/hl2sdk-cs2)
+if(SOURCESDK_DIR)
+	file(TO_CMAKE_PATH "${SOURCESDK_DIR}" SOURCESDK_DIR)
+else()
+	set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/hl2sdk")
 endif()
 
 set(INCLUDE_DIR "include")

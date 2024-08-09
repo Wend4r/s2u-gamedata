@@ -21,10 +21,9 @@
 
 #include <gamedata.hpp>
 
-#include <stdlib.h>
-
-#include <tier0/keyvalues.h>
+#include <tier0/commonmacros.h>
 #include <tier0/platform.h>
+#include <tier1/keyvalues3.h>
 
 // Windows: linkage corresponds to a final class type.
 #ifdef META_IS_SOURCE2
@@ -42,53 +41,6 @@ class IServerGameDLL;
 
 DLL_IMPORT IVEngineServer *engine;
 DLL_IMPORT IServerGameDLL *server;
-
-DynLibUtils::CModule g_aLibEngine, 
-                     g_aLibServer;
-
-bool GameData::Init(char *psError, size_t nMaxLength)
-{
-	bool bResult = g_aLibEngine.InitFromMemory(engine);
-
-	if(bResult)
-	{
-		this->m_aLibraryMap["engine"] = &g_aLibEngine;
-
-		bResult = g_aLibServer.InitFromMemory(server);
-
-		if(bResult)
-		{
-			this->m_aLibraryMap["server"] = &g_aLibServer;
-		}
-		else
-		{
-			strncpy(psError, "Failed to get server module", nMaxLength);
-		}
-	}
-	else
-	{
-		strncpy(psError, "Failed to get engine module", nMaxLength);
-	}
-
-	return true;
-}
-
-void GameData::Clear()
-{
-	this->m_aLibraryMap.clear();
-}
-
-void GameData::Destroy()
-{
-	// ...
-}
-
-const DynLibUtils::CModule *GameData::FindLibrary(std::string sName) const
-{
-	auto itResult = this->m_aLibraryMap.find(sName);
-
-	return itResult == this->m_aLibraryMap.cend() ? nullptr : itResult->second;
-}
 
 const char *GameData::GetSourceEngineName()
 {
@@ -124,24 +76,24 @@ GameData::Platform GameData::GetCurrentPlatform()
 
 const char *GameData::GetCurrentPlatformName()
 {
-	return This::GetPlatformName(This::GetCurrentPlatform());
+	return GetPlatformName(GetCurrentPlatform());
 }
 
 const char *GameData::GetPlatformName(Platform eElm)
 {
-	const char *sPlatformNames[Platform::PLAT_MAX] =
+	static const char *s_pszPlatformNames[Platform::PLAT_MAX] =
 	{
 		"windows",
-		"windows64",
+		"win64",
 
 		"linux",
-		"linux64",
+		"linuxsteamrt64",
 
 		"mac",
 		"mac64"
 	};
 
-	return sPlatformNames[eElm];
+	return s_pszPlatformNames[eElm];
 }
 
 ptrdiff_t GameData::ReadOffset(const char *pszValue)
@@ -149,27 +101,29 @@ ptrdiff_t GameData::ReadOffset(const char *pszValue)
 	return static_cast<ptrdiff_t>(strtol(pszValue, NULL, 0));
 }
 
-GameData::Config::Config(Addresses aAddressStorage, Offsets aOffsetsStorage)
+GameData::Config::Config(const Addresses &aAddressStorage, const Offsets &aOffsetsStorage)
  :  m_aAddressStorage(aAddressStorage), 
     m_aOffsetStorage(aOffsetsStorage)
 {
 }
 
-bool GameData::Config::Load(IGameData *pRoot, KeyValues *pGameConfig, char *psError, size_t nMaxLength)
+bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages)
 {
 	const char *pszEngineName = GameData::GetSourceEngineName();
 
-	KeyValues *pEngineValues = pGameConfig->FindKey(pszEngineName, false);
+	KeyValues3 *pEngineValues = pGameConfig->FindMember(pszEngineName);
 
 	bool bResult = pEngineValues != nullptr;
 
 	if(bResult)
 	{
-		bResult = this->LoadEngine(pRoot, pEngineValues, psError, nMaxLength);
+		bResult = LoadEngine(pRoot, pEngineValues, vecMessages);
 	}
-	else if(psError)
+	else
 	{
-		snprintf(psError, nMaxLength, "Failed to find \"%s\" section", pszEngineName);
+		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineName, "\" section"};
+
+		vecMessages.AddToTail({pszMessageConcat});
 	}
 
 	return bResult;
@@ -177,314 +131,392 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues *pGameConfig, char *psEr
 
 void GameData::Config::ClearValues()
 {
-	this->m_aAddressStorage.ClearValues();
-	this->m_aOffsetStorage.ClearValues();
+	m_aAddressStorage.ClearValues();
+	m_aOffsetStorage.ClearValues();
 }
 
 GameData::Config::Addresses &GameData::Config::GetAddresses()
 {
-	return this->m_aAddressStorage;
+	return m_aAddressStorage;
 }
 
 GameData::Config::Offsets &GameData::Config::GetOffsets()
 {
-	return this->m_aOffsetStorage;
+	return m_aOffsetStorage;
 }
 
-bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues *pEngineValues, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages)
 {
-	KeyValues *pSectionValues = pEngineValues->FindKey("Signatures", false);
-
-	bool bResult = true;
-
-	if(pSectionValues) // Ignore the section not found for result.
+	struct
 	{
-		bResult = this->LoadEngineSignatures(pRoot, pSectionValues, psError, nMaxLength);
-	}
-
-	if(bResult)
+		CKV3MemberName aMember;
+		bool (GameData::Config::*pfnLoadOne)(IGameData *pRoot, KeyValues3 *pValues, CBufferStringVector &vecMessages);
+	} aSections[] =
 	{
-		pSectionValues = pEngineValues->FindKey("Offsets", false);
-
-		if(pSectionValues) // Same ignore.
 		{
-			bResult = this->LoadEngineOffsets(pSectionValues, psError, nMaxLength);
+			"Signatures",
+			&GameData::Config::LoadEngineSignatures
+		},
+		{
+			"Offsets",
+			&GameData::Config::LoadEngineOffsets
+		},
+		{
+			"Addresses",
+			&GameData::Config::LoadEngineAddresses
+		}
+	};
+
+	CBufferStringVector vecSubMessages;
+
+	for(uintp n = 0, nSize = ARRAYSIZE(aSections); n < nSize; n++)
+	{
+		auto &aSection = aSections[n];
+
+		auto &aSectionMember = aSection.aMember;
+
+		KeyValues3 *pEngineMember = pEngineValues->FindMember(aSectionMember);
+
+		if(pEngineMember && !(this->*(aSections[n].pfnLoadOne))(pRoot, pEngineMember, vecSubMessages))
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "load \"", aSectionMember.GetString(), "\" section:"};
+
+			vecMessages.AddToTail(pszMessageConcat);
+
+			FOR_EACH_VEC(vecSubMessages, i)
+			{
+				const auto &it = vecSubMessages[i];
+
+				const char *pszSubMessageConcat[] = {"\t", it.Get()};
+
+				vecMessages.AddToTail(pszSubMessageConcat);
+			}
 		}
 	}
 
-	if(bResult)
-	{
-		pSectionValues = pEngineValues->FindKey("Addresses", false);
+	return true;
+}
 
-		if(pSectionValues)
+bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages)
+{
+	int iMemberCount = pSignaturesValues->GetMemberCount();
+
+	if(!iMemberCount)
+	{
+		static const char *s_pszMessageConcat[] = {"Section is empty"};
+
+		vecMessages.AddToTail(s_pszMessageConcat);
+
+		return false;
+	}
+
+	KV3MemberId_t i = 0;
+
+	const char *pszLibraryKey = "library", 
+	           *pszPlatformKey = GameData::GetCurrentPlatformName();
+
+	do
+	{
+		KeyValues3 *pSigSection = pSignaturesValues->GetMember(i);
+
+		const char *pszSigName = pSignaturesValues->GetMemberName(i);
+
+		KeyValues3 *pLibraryValues = pSigSection->FindMember(pszLibraryKey);
+
+		if(!pLibraryValues)
 		{
-			bResult = this->LoadEngineAddresses(pSectionValues, psError, nMaxLength);
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszLibraryKey, "\" key ", "at \"", pszSigName, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
 		}
-	}
 
-	return bResult;
-}
+		const char *pszLibraryName = pLibraryValues->GetString("<none>");
 
-bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues *pSignaturesValues, char *psError, size_t nMaxLength)
-{
-	KeyValues *pSigSection = pSignaturesValues->GetFirstSubKey();
+		const auto *pLibModule = pRoot->FindLibrary(pszLibraryName);
 
-	bool bResult = pSigSection != nullptr;
-
-	if(bResult)
-	{
-		const char *pszLibraryKey = "library", 
-		           *pszPlatformKey = GameData::GetCurrentPlatformName();
-
-		do
+		if(!pLibModule)
 		{
-			const char *pszSigName = pSigSection->GetName();
+			const char *pszMessageConcat[] = {"Unknown \"", pszLibraryName, "\" library ", "at \"", pszSigName, "\""};
 
-			KeyValues *pLibraryValues = pSigSection->FindKey(pszLibraryKey, false);
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
-			bResult = pLibraryValues != nullptr;
-
-			if(bResult)
-			{
-				const char *pszLibraryName = pLibraryValues->GetString(NULL, "unknown");
-
-				const auto pLibModule = pRoot->FindLibrary(pszLibraryName);
-
-				bResult = (bool)pLibModule;
-
-				if(bResult)
-				{
-					KeyValues *pPlatformValues = pSigSection->FindKey(pszPlatformKey, false);
-
-					bResult = pPlatformValues != nullptr;
-
-					if(pPlatformValues)
-					{
-						const char *pszSignature = pPlatformValues->GetString();
-
-						const auto pSigResult = pLibModule->FindPattern(pszSignature);
-
-						bResult = (bool)pSigResult;
-
-						if(bResult)
-						{
-							this->SetAddress(pszSigName, pSigResult);
-						}
-						else if(psError)
-						{
-							snprintf(psError, nMaxLength, "Failed to find \"%s\" signature", pszSigName);
-						}
-					}
-					else if(psError)
-					{
-						snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\" signature", pszPlatformKey, pszSigName);
-					}
-				}
-				else if(psError)
-				{
-					snprintf(psError, nMaxLength, "Unknown \"%s\" library at \"%s\" signature", pszLibraryName, pszSigName);
-				}
-			}
-			else if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get \"%s\" key at \"%s\" signature", pszLibraryKey, pszSigName);
-			}
-
-			pSigSection = pSigSection->GetNextKey();
+			continue;
 		}
-		while(pSigSection);
-	}
-	else if(psError)
-	{
-		strncpy(psError, "Signatures section is empty", nMaxLength);
-	}
 
-	return bResult;
-}
+		KeyValues3 *pPlatformValues = pSigSection->FindMember(pszPlatformKey);
 
-bool GameData::Config::LoadEngineOffsets(KeyValues *pOffsetsValues, char *psError, size_t nMaxLength)
-{
-	KeyValues *pOffsetSection = pOffsetsValues->GetFirstSubKey();
-
-	bool bResult = pOffsetSection != nullptr;
-
-	if(bResult)
-	{
-		const char *pszPlatformKey = GameData::GetCurrentPlatformName();
-
-		do
+		if(!pPlatformValues)
 		{
-			const char *pszOffsetName = pOffsetSection->GetName();
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "platform ", "(\"", pszPlatformKey, "\" key) ", "at \"", pszSigName, "\""};
 
-			KeyValues *pPlatformValues = pOffsetSection->FindKey(pszPlatformKey, false);
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
-			bResult = pPlatformValues != nullptr;
-
-			if(pPlatformValues)
-			{
-				this->SetOffset(pszOffsetName, GameData::ReadOffset(pPlatformValues->GetString()));
-			}
-			else if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get platform (\"%s\" key) at \"%s\" signature", pszPlatformKey, pszOffsetName);
-			}
-
-			pOffsetSection = pOffsetSection->GetNextKey();
+			continue;
 		}
-		while(pOffsetSection);
-	}
-	else if(psError)
-	{
-		strncpy(psError, "Offsets section is empty", nMaxLength);
-	}
 
-	return bResult;
-}
+		const char *pszSignature = pPlatformValues->GetString();
 
-bool GameData::Config::LoadEngineAddresses(KeyValues *pAddressesValues, char *psError, size_t nMaxLength)
-{
-	KeyValues *pAddrSection = pAddressesValues->GetFirstSubKey();
+		const auto pSigResult = pLibModule->FindPattern(pszSignature);
 
-	bool bResult = pAddrSection != nullptr;
-
-	if(bResult)
-	{
-		const char *pszSignatureKey = "signature";
-
-		char sAddressActionsError[256];
-
-		do
+		if(!pSigResult)
 		{
-			const char *pszAddressName = pAddrSection->GetName();
+			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszSigName, "\""};
 
-			KeyValues *pSignatureValues = pAddrSection->FindKey(pszSignatureKey, false);
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
-			bResult = pSignatureValues != nullptr;
-
-			if(bResult)
-			{
-				const char *pszSignatureName = pSignatureValues->GetString();
-
-				const auto &aSigAddress = this->GetAddress(pszSignatureName);
-
-				if(aSigAddress)
-				{
-					uintptr_t pAddrCur = aSigAddress.GetPtr();
-
-					// Remove an extra keys.
-					{
-						pAddrSection->RemoveSubKey(pSignatureValues, true /* bDelete */, true);
-
-						int iCurrentPlat = This::GetCurrentPlatform();
-
-						for(int iPlat = PLAT_FIRST; iPlat < PLAT_MAX; iPlat++)
-						{
-							if(iCurrentPlat != iPlat)
-							{
-								pAddrSection->FindAndDeleteSubKey(This::GetPlatformName((This::Platform)iPlat));
-							}
-						}
-					}
-
-					if(this->LoadEngineAddressActions(pAddrCur, pAddrSection, (char *)sAddressActionsError, sizeof(sAddressActionsError)))
-					{
-						this->SetAddress(pszAddressName, pAddrCur);
-					}
-					else if(psError)
-					{
-						snprintf(psError, nMaxLength, "Failed to get \"%s\" address action: %s\n", pszAddressName, sAddressActionsError);
-					}
-				}
-				else if(psError)
-				{
-					snprintf(psError, nMaxLength, "Failed to get \"%s\" signature in \"%s\" address", pszSignatureName, pszAddressName);
-				}
-			}
-			else if(psError)
-			{
-				snprintf(psError, nMaxLength, "Failed to get signature (\"%s\" key) at \"%s\" address", pszSignatureKey, pszAddressName);
-			}
-
-			pAddrSection = pAddrSection->GetNextKey();
+			continue;
 		}
-		while(pAddrSection);
-	}
-	else if(psError)
-	{
-		strncpy(psError, "Signatures section is empty", nMaxLength);
-	}
 
-	return bResult;
+		SetAddress(GetSymbol(pszSigName), pSigResult);
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
 }
 
-bool GameData::Config::LoadEngineAddressActions(uintptr_t &pAddrCur, KeyValues *pActionSection, char *psError, size_t nMaxLength)
+bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages)
 {
-	KeyValues *pAction = pActionSection->GetFirstSubKey();
+	int iMemberCount = pOffsetsValues->GetMemberCount();
 
-	bool bResult = pAction != nullptr;
-
-	if(bResult)
+	if(!iMemberCount)
 	{
-		do
+		static const char *s_pszMessageConcat[] = {"Offsets section is empty"};
+
+		vecMessages.AddToTail(s_pszMessageConcat);
+
+		return false;
+	}
+
+	KV3MemberId_t i = 0;
+
+	const char *pszPlatformKey = GameData::GetCurrentPlatformName();
+
+	do
+	{
+		KeyValues3 *pOffsetSection = pOffsetsValues->GetMember(i);
+
+		const char *pszOffsetName = pOffsetsValues->GetMemberName(i);
+
+		KeyValues3 *pPlatformValues = pOffsetSection->FindMember(pszPlatformKey);
+
+		if(!pPlatformValues)
 		{
-			const char *pszName = pAction->GetName();
+			const char *pszMessageConcat[] = {"Failed to ", "get ", " platform ", "(\"", pszPlatformKey, "\" key)", "at \"", pszOffsetName, "\""};
 
-			ptrdiff_t nActionValue = GameData::ReadOffset(pAction->GetString());
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
 
-			if(!strcmp(pszName, "offset"))
-			{
-				pAddrCur += nActionValue;
-			}
-			else if(!strncmp(pszName, "read", 4))
-			{
-				if(!pszName[4])
-				{
-					pAddrCur = *(uintptr_t *)(pAddrCur + nActionValue);
-				}
-				else if(!strcmp(&pszName[4], "_offs32"))
-				{
-					pAddrCur = pAddrCur + nActionValue + sizeof(int32_t) + *(int32_t *)(pAddrCur + nActionValue);
-				}
-				else if(psError)
-				{
-					bResult = false;
-					snprintf(psError, nMaxLength, "Unknown \"%s\" read action", pszName);
-				}
-			}
-			else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
-			{
-				bResult = this->LoadEngineAddressActions(pAddrCur, pAction, psError, nMaxLength); // Recursive by platform.
-			}
-			else if(psError)
-			{
-				bResult = false;
-				snprintf(psError, nMaxLength, "Unknown \"%s\" action", pszName);
-			}
-
-			pAction = pAction->GetNextKey();
+			continue;
 		}
-		while(pAction);
+
+		SetOffset(GetSymbol(pszOffsetName), pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
+}
+
+bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferStringVector &vecMessages)
+{
+	int iMemberCount = pAddressesValues->GetMemberCount();
+
+	if(!iMemberCount)
+	{
+		const char *s_pszMessageConcat[] = {"Section is empty"};
+
+		vecMessages.AddToTail(s_pszMessageConcat);
+
+		return false;
 	}
 
-	return bResult;
+	KV3MemberId_t i = 0;
+
+	const char *pszSignatureKey = "signature";
+
+	CBufferStringVector vecSubMessages;
+
+	do
+	{
+		KeyValues3 *pAddrSection = pAddressesValues->GetMember(i);
+
+		const char *pszAddressName = pAddressesValues->GetMemberName(i);
+
+		KeyValues3 *pSignatureValues = pAddrSection->FindMember(pszSignatureKey);
+
+		if(!pSignatureValues)
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" key ", "at \"", pszAddressName, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		const char *pszSignatureName = pSignatureValues->GetString();
+
+		const auto &pSigAddress = GetAddress(GetSymbol(pszSignatureName));
+
+		if(!pSigAddress)
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" signature ", "in \"", pszAddressName, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		uintptr_t pAddrCur = pSigAddress.GetPtr();
+
+		// Remove an extra keys.
+		{
+			pAddrSection->RemoveMember(pSignatureValues);
+
+			int iCurrentPlat = GetCurrentPlatform();
+
+			for(int iPlat = PLAT_FIRST; iPlat < PLAT_MAX; iPlat++)
+			{
+				if(iCurrentPlat != iPlat)
+				{
+					pAddrSection->RemoveMember(GetPlatformName((Platform)iPlat));
+				}
+			}
+		}
+
+		if(!LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, vecSubMessages))
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "load ", "\"", pszSignatureKey, "\" address action:"};
+
+			vecMessages.AddToTail(pszMessageConcat);
+
+			FOR_EACH_VEC(vecSubMessages, i)
+			{
+				const auto &it = vecSubMessages[i];
+
+				const char *pszSubMessageConcat[] = {"\t", it.Get()};
+
+				vecMessages.AddToTail(pszSubMessageConcat);
+			}
+
+			i++;
+
+			continue;
+		}
+
+		SetAddress(GetSymbol(pszAddressName), pAddrCur);
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
 }
 
-const DynLibUtils::CMemory &GameData::Config::GetAddress(const std::string &sName) const
+bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CBufferStringVector &vecMessages)
 {
-	return this->m_aAddressStorage.Get(sName);
+	int iMemberCount = pActionsValues->GetMemberCount();
+
+	if(!iMemberCount)
+	{
+		static const char *s_pszMessageConcat[] = {"Section is empty"};
+
+		vecMessages.AddToTail(s_pszMessageConcat);
+
+		return false;
+	}
+
+	KV3MemberId_t i = 0;
+
+	do
+	{
+		KeyValues3 *pAction = pActionsValues->GetMember(i);
+
+		const char *pszName = pActionsValues->GetMemberName(i);
+
+		ptrdiff_t nActionValue = GameData::ReadOffset(pAction->GetString());
+
+		if(!strcmp(pszName, "offset"))
+		{
+			pAddrCur += nActionValue;
+		}
+		else if(!strncmp(pszName, "read", 4))
+		{
+			if(!pszName[4])
+			{
+				pAddrCur = *(uintptr_t *)(pAddrCur + nActionValue);
+			}
+			else if(!strcmp(&pszName[4], "_offs32"))
+			{
+				pAddrCur = pAddrCur + nActionValue + sizeof(int32_t) + *(int32_t *)(pAddrCur + nActionValue);
+			}
+			else
+			{
+				const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" read key"};
+
+				vecMessages.AddToTail(pszMessageConcat);
+				i++;
+
+				continue;
+			}
+		}
+		else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
+		{
+			return LoadEngineAddressActions(pRoot, pAddrCur, pAction, vecMessages); // Recursive by platform.
+		}
+		else
+		{
+			const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" key"};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
 }
 
-const ptrdiff_t &GameData::Config::GetOffset(const std::string &sName) const
+CUtlSymbolLarge GameData::Config::GetSymbol(const char *pszText)
 {
-	return this->m_aOffsetStorage.Get(sName);
+	return m_aSymbolTable.AddString(pszText);
 }
 
-void GameData::Config::SetAddress(const std::string &sName, DynLibUtils::CMemory aMemory)
+CUtlSymbolLarge GameData::Config::FindSymbol(const char *pszText) const
 {
-	this->m_aAddressStorage.Set(sName, aMemory);
+	return m_aSymbolTable.Find(pszText);
 }
 
-void GameData::Config::SetOffset(const std::string &sName, ptrdiff_t nValue)
+const DynLibUtils::CMemory &GameData::Config::GetAddress(CUtlSymbolLarge sName) const
 {
-	this->m_aOffsetStorage.Set(sName, nValue);
+	return m_aAddressStorage.Get(sName);
+}
+
+const ptrdiff_t &GameData::Config::GetOffset(CUtlSymbolLarge sName) const
+{
+	return m_aOffsetStorage.Get(sName);
+}
+
+void GameData::Config::SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory)
+{
+	m_aAddressStorage.Set(sName, aMemory);
+}
+
+void GameData::Config::SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue)
+{
+	m_aOffsetStorage.Set(sName, nValue);
 }
