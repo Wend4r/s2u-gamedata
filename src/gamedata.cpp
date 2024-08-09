@@ -261,9 +261,6 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		const char *pszSignature = pPlatformValues->GetString();
 
-		Msg("pszSignature = \"%s\", pLibModule = %p\n", pszSignature, pLibModule);
-		Msg("pLibModule module = %p\n", pLibModule->GetModuleHandle());
-
 		const auto pSigResult = pLibModule->FindPattern(pszSignature);
 
 		if(!pSigResult)
