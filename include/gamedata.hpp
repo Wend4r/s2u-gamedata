@@ -38,7 +38,7 @@
 
 #include <tier0/bufferstring.h>
 #include <tier0/dbg.h>
-#include <tier0/utlsymbol.h>
+#include <tier1/utlsymbollarge.h>
 #include <tier1/utlmap.h>
 #include <tier1/utlrbtree.h>
 #include <tier1/utlvector.h>
@@ -124,7 +124,7 @@ namespace GameData
 			}; // GameData::Config::Storage::IListener
 
 			Storage()
-			 :  m_mapValues(DefLessFunc(const CUtlSymbol))
+			 :  m_mapValues(DefLessFunc(const CUtlSymbolLarge))
 			{
 			}
 
@@ -144,7 +144,7 @@ namespace GameData
 
 			public:
 				BaseListenerCollector()
-				 :  m_mapCallbacks(DefLessFunc(const CUtlSymbol))
+				 :  m_mapCallbacks(DefLessFunc(const CUtlSymbolLarge))
 				{
 				}
 
@@ -427,8 +427,8 @@ namespace GameData
 		}; // GameData::Config::Storage
 
 	public:
-		using Addresses = Storage<CUtlSymbol, DynLibUtils::CMemory>;
-		using Offsets = Storage<CUtlSymbol, ptrdiff_t>;
+		using Addresses = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
+		using Offsets = Storage<CUtlSymbolLarge, ptrdiff_t>;
 
 	public:
 		Config() = default;
@@ -453,20 +453,19 @@ namespace GameData
 		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
 
 	public:
-		CUtlSymbol GetSymbol(const char *pszText);
-		CUtlSymbol FindSymbol(const char *pszText) const;
-		const char *GetSymbolText(CUtlSymbol hText);
+		CUtlSymbolLarge GetSymbol(const char *pszText);
+		CUtlSymbolLarge FindSymbol(const char *pszText) const;
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(CUtlSymbol hName) const;
-		const ptrdiff_t &GetOffset(CUtlSymbol hName) const;
+		const DynLibUtils::CMemory &GetAddress(CUtlSymbolLarge sName) const;
+		const ptrdiff_t &GetOffset(CUtlSymbolLarge sName) const;
 
 	protected:
-		void SetAddress(CUtlSymbol hName, DynLibUtils::CMemory aMemory);
-		void SetOffset(CUtlSymbol hName, ptrdiff_t nValue);
+		void SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory);
+		void SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue);
 
 	private:
-		CUtlSymbolTable m_aSymbolTable;
+		CUtlSymbolTableLarge_CI m_aSymbolTable;
 
 		Addresses m_aAddressStorage;
 		Offsets m_aOffsetStorage;

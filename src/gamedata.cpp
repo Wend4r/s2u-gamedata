@@ -491,37 +491,32 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 	return true;
 }
 
-CUtlSymbol GameData::Config::GetSymbol(const char *pszText)
+CUtlSymbolLarge GameData::Config::GetSymbol(const char *pszText)
 {
 	return m_aSymbolTable.AddString(pszText);
 }
 
-CUtlSymbol GameData::Config::FindSymbol(const char *pszText) const
+CUtlSymbolLarge GameData::Config::FindSymbol(const char *pszText) const
 {
 	return m_aSymbolTable.Find(pszText);
 }
 
-const char *GameData::Config::GetSymbolText(CUtlSymbol hSymbol)
+const DynLibUtils::CMemory &GameData::Config::GetAddress(CUtlSymbolLarge sName) const
 {
-	return m_aSymbolTable.String(hSymbol);
+	return m_aAddressStorage.Get(sName);
 }
 
-const DynLibUtils::CMemory &GameData::Config::GetAddress(CUtlSymbol hName) const
+const ptrdiff_t &GameData::Config::GetOffset(CUtlSymbolLarge sName) const
 {
-	return m_aAddressStorage.Get(hName);
+	return m_aOffsetStorage.Get(sName);
 }
 
-const ptrdiff_t &GameData::Config::GetOffset(CUtlSymbol hName) const
+void GameData::Config::SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory)
 {
-	return m_aOffsetStorage.Get(hName);
+	m_aAddressStorage.Set(sName, aMemory);
 }
 
-void GameData::Config::SetAddress(CUtlSymbol hName, DynLibUtils::CMemory aMemory)
+void GameData::Config::SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue)
 {
-	m_aAddressStorage.Set(hName, aMemory);
-}
-
-void GameData::Config::SetOffset(CUtlSymbol hName, ptrdiff_t nValue)
-{
-	m_aOffsetStorage.Set(hName, nValue);
+	m_aOffsetStorage.Set(sName, nValue);
 }
