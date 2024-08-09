@@ -30,6 +30,8 @@
 #include <dynlibutils/module.hpp>
 #include <dynlibutils/memaddr.hpp>
 
+#include <stddef.h>
+
 #include <functional>
 
 #include <tier0/platform.h>
