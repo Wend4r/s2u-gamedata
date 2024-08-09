@@ -451,6 +451,7 @@ namespace GameData
 
 	public:
 		CUtlSymbol GetSymbol(const char *pszText);
+		CUtlSymbol FindSymbol(const char *pszText) const;
 		const char *GetSymbolText(CUtlSymbol hText);
 
 	public:

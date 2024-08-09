@@ -499,6 +499,11 @@ CUtlSymbol GameData::Config::GetSymbol(const char *pszText)
 	return m_aSymbolTable.AddString(pszText);
 }
 
+CUtlSymbol GameData::Config::FindSymbol(const char *pszText) const
+{
+	return m_aSymbolTable.Find(pszText);
+}
+
 const char *GameData::Config::GetSymbolText(CUtlSymbol hSymbol)
 {
 	return m_aSymbolTable.String(hSymbol);
