@@ -36,7 +36,7 @@
 
 #include <tier0/bufferstring.h>
 #include <tier0/dbg.h>
-#include <tier0/utlbinaryblock.h>
+#include <tier0/utlsymbol.h>
 #include <tier1/utlmap.h>
 #include <tier1/utlrbtree.h>
 #include <tier1/utlvector.h>
@@ -52,7 +52,7 @@ class KeyValues3;
 class IGameData
 {
 public:
-	virtual const DynLibUtils::CModule *FindLibrary(CUtlBinaryBlock aName) const = 0;
+	virtual const DynLibUtils::CModule *FindLibrary(const char *pszName) const = 0;
 }; // IGameData
 
 namespace GameData
@@ -80,15 +80,6 @@ namespace GameData
 	}; // GameData::CBufferStringConcat
 
 	using CBufferStringVector = CUtlVector<CBufferStringConcat>;
-
-	class CDefOpsStringBinaryBlock
-	{
-	public:
-		static bool LessFunc(const CUtlBinaryBlock &lhs, const CUtlBinaryBlock &rhs)
-		{
-			return StringLessThan((const char *)lhs.Get(), (const char *)rhs.Get());
-		}
-	};
 
 	static const char *GetSourceEngineName();
 
@@ -131,7 +122,7 @@ namespace GameData
 			}; // GameData::Config::Storage::IListener
 
 			Storage()
-			 :  m_mapValues(CDefOpsStringBinaryBlock::LessFunc)
+			 :  m_mapValues(DefLessFunc(const CUtlSymbol))
 			{
 			}
 
@@ -151,7 +142,7 @@ namespace GameData
 
 			public:
 				BaseListenerCollector()
-				 :  m_mapCallbacks(CDefOpsStringBinaryBlock::LessFunc)
+				 :  m_mapCallbacks(DefLessFunc(const CUtlSymbol))
 				{
 				}
 
@@ -222,8 +213,6 @@ namespace GameData
 					Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks));
 
 					auto &it = map.Element(iFoundIndex);
-
-					Msg("type of it = %s (%p), type of key = %s, aKey = \"%s\"\n", typeid(it).name(), &it, typeid(map.Key(iFoundIndex)).name(), aKey.Get());
 
 					it(aKey, aValue);
 				}
@@ -435,8 +424,8 @@ namespace GameData
 		}; // GameData::Config::Storage
 
 	public:
-		using Addresses = Storage<CUtlBinaryBlock, DynLibUtils::CMemory>;
-		using Offsets = Storage<CUtlBinaryBlock, ptrdiff_t>;
+		using Addresses = Storage<CUtlSymbol, DynLibUtils::CMemory>;
+		using Offsets = Storage<CUtlSymbol, ptrdiff_t>;
 
 	public:
 		Config() = default;
@@ -461,14 +450,20 @@ namespace GameData
 		bool LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(const char *pszName) const;
-		const ptrdiff_t &GetOffset(const char *pszName) const;
+		CUtlSymbol GetSymbol(const char *pszText);
+		const char *GetSymbolText(CUtlSymbol hText);
+
+	public:
+		const DynLibUtils::CMemory &GetAddress(CUtlSymbol hName) const;
+		const ptrdiff_t &GetOffset(CUtlSymbol hName) const;
 
 	protected:
-		void SetAddress(const char *pszName, DynLibUtils::CMemory aMemory);
-		void SetOffset(const char *pszName, ptrdiff_t nValue);
+		void SetAddress(CUtlSymbol hName, DynLibUtils::CMemory aMemory);
+		void SetOffset(CUtlSymbol hName, ptrdiff_t nValue);
 
 	private:
+		CUtlSymbolTable m_aSymbolTable;
+
 		Addresses m_aAddressStorage;
 		Offsets m_aOffsetStorage;
 	}; // GameData::Config

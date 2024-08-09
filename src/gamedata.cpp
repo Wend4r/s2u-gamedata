@@ -276,7 +276,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 			continue;
 		}
 
-		SetAddress(pszSigName, pSigResult);
+		SetAddress(GetSymbol(pszSigName), pSigResult);
 
 		i++;
 	}
@@ -320,7 +320,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 			continue;
 		}
 
-		SetOffset(pszOffsetName, pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
+		SetOffset(GetSymbol(pszOffsetName), pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
 
 		i++;
 	}
@@ -368,7 +368,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		const char *pszSignatureName = pSignatureValues->GetString();
 
-		const auto &pSigAddress = GetAddress(pszSignatureName);
+		const auto &pSigAddress = GetAddress(GetSymbol(pszSignatureName));
 
 		if(!pSigAddress)
 		{
@@ -417,7 +417,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			continue;
 		}
 
-		SetAddress(pszAddressName, pAddrCur);
+		SetAddress(GetSymbol(pszAddressName), pAddrCur);
 
 		i++;
 	}
@@ -494,22 +494,32 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 	return true;
 }
 
-const DynLibUtils::CMemory &GameData::Config::GetAddress(const char *pszName) const
+CUtlSymbol GameData::Config::GetSymbol(const char *pszText)
 {
-	return m_aAddressStorage.Get(pszName);
+	return m_aSymbolTable.AddString(pszText);
 }
 
-const ptrdiff_t &GameData::Config::GetOffset(const char *pszName) const
+const char *GameData::Config::GetSymbolText(CUtlSymbol hSymbol)
 {
-	return m_aOffsetStorage.Get(pszName);
+	return m_aSymbolTable.String(hSymbol);
 }
 
-void GameData::Config::SetAddress(const char *pszName, DynLibUtils::CMemory aMemory)
+const DynLibUtils::CMemory &GameData::Config::GetAddress(CUtlSymbol hName) const
 {
-	m_aAddressStorage.Set(pszName, aMemory);
+	return m_aAddressStorage.Get(hName);
 }
 
-void GameData::Config::SetOffset(const char *pszName, ptrdiff_t nValue)
+const ptrdiff_t &GameData::Config::GetOffset(CUtlSymbol hName) const
 {
-	m_aOffsetStorage.Set(pszName, nValue);
+	return m_aOffsetStorage.Get(hName);
+}
+
+void GameData::Config::SetAddress(CUtlSymbol hName, DynLibUtils::CMemory aMemory)
+{
+	m_aAddressStorage.Set(hName, aMemory);
+}
+
+void GameData::Config::SetOffset(CUtlSymbol hName, ptrdiff_t nValue)
+{
+	m_aOffsetStorage.Set(hName, nValue);
 }
