@@ -444,7 +444,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 
 		const char *pszName = pActionsValues->GetMemberName(i);
 
-		ptrdiff_t nActionValue = GameData::ReadOffset(pAction->GetString());
+		ptrdiff_t nActionValue = (ptrdiff_t)pAction->GetUInt64();
 
 		if(!strcmp(pszName, "offset"))
 		{
