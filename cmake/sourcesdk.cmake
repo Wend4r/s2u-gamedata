@@ -1,9 +1,15 @@
+# GameData
+# Copyright (C) 2023-2024 Wend4r
+# Licensed under the GPLv3 license. See LICENSE file in the project root for details.
+
 if(NOT SOURCESDK_DIR)
 	message(FATAL_ERROR "SOURCESDK_DIR is empty")
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64-bit
-	add_definitions(
+	set(SOURCESDK_COMPILE_DEFINTIONS
+		${SOURCESDK_COMPILE_DEFINTIONS}
+
 		-DPLATFORM_64BITS -DX64BITS
 	)
 else()
@@ -12,16 +18,24 @@ else()
 	message(FATAL_ERROR "${SIZEOF_BITS}-bit platform is not supported")
 endif()
 
-set(SOURCESDK_COMPILE_DEFINTIONS)
-
 if(LINUX)
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
 
-		-D_LINUX -DPOSIX -DLINUX -DCOMPILER_GCC
+		-DPOSIX
+		-D_LINUX -DLINUX
+
 		-Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp
 		-Dstrnicmp=strncasecmp -D_snprintf=snprintf
 		-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp
+	)
+endif()
+
+if(WINDOWS)
+	set(SOURCESDK_COMPILE_DEFINTIONS
+		${SOURCESDK_COMPILE_DEFINTIONS}
+
+		-D_WIN32 -DWIN32
 	)
 endif()
 
@@ -37,11 +51,13 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(PLATFORM_COMPILE_DEFINITIONS
 		${PLATFORM_COMPILE_DEFINITIONS}
 
-		-D_DEBUG
+		-D_DEBUG -DDEBUG
 	)
 endif()
 
 set(SOURCESDK_INCLUDE_DIR
+	${SOURCESDK_INCLUDE_DIR}
+
 	${SOURCESDK_DIR}/common
 	${SOURCESDK_DIR}/game/shared
 	${SOURCESDK_DIR}/game/server
@@ -52,7 +68,6 @@ set(SOURCESDK_INCLUDE_DIR
 	${SOURCESDK_DIR}/public/tier0
 	${SOURCESDK_DIR}/public/tier1
 	${SOURCESDK_DIR}/public
-	${SOURCESDK_DIR}/thirdparty/protobuf-3.21.8/src
 	${SOURCESDK_DIR}
 )
 
@@ -61,7 +76,9 @@ set(SOURCESDK_LIB_DIR ${SOURCESDK_DIR}/lib)
 if(WINDOWS)
 	set(SOURCESDK_LIB_PLATFORM_DIR "${SOURCESDK_LIB_DIR}/public/win64")
 
-	set(SOURCESDK_LIBRARIES
+	set(SOURCESDK_LINK_LIBRARIES
+		${SOURCESDK_LINK_LIBRARIES}
+
 		${SOURCESDK_LIB_PLATFORM_DIR}/tier0.lib
 		# ${SOURCESDK_LIB_PLATFORM_DIR}/tier1.lib
 		# ${SOURCESDK_LIB_PLATFORM_DIR}/interfaces.lib
@@ -70,7 +87,9 @@ if(WINDOWS)
 elseif(LINUX)
 	set(SOURCESDK_LIB_PLATFORM_DIR "${SOURCESDK_LIB_DIR}/linux64")
 
-	set(SOURCESDK_LIBRARIES
+	set(SOURCESDK_LINK_LIBRARIES
+		${SOURCESDK_LINK_LIBRARIES}
+
 		${SOURCESDK_LIB_PLATFORM_DIR}/libtier0.so
 		# ${SOURCESDK_LIB_PLATFORM_DIR}/tier1.a
 		# ${SOURCESDK_LIB_PLATFORM_DIR}/interfaces.a

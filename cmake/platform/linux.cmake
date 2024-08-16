@@ -1,18 +1,27 @@
-# Warnings
+# GameData
+# Copyright (C) 2023-2024 Wend4r
+# Licensed under the GPLv3 license. See LICENSE file in the project root for details.
+
 set(PLATFORM_COMPILER_OPTIONS
 	${PLATFORM_COMPILER_OPTIONS}
 
-	-Wall -Wno-uninitialized -Wno-switch -Wno-unused
-	-Wno-conversion-null -Wno-write-strings
-	-Wno-invalid-offsetof -Wno-reorder
-	-Wno-register
+	-Wall
+	-Wno-conversion -Wno-overloaded-virtual -Wno-invalid-offsetof
+	-Wno-non-virtual-dtor -Wno-delete-non-virtual-dtor
+	-Wno-unused -Wno-register
+	-Wno-narrowing
+	-Wno-ordered-compare-function-pointers
 
-	# Others
-	-mfpmath=sse -msse -fno-strict-aliasing
-	-fno-threadsafe-statics -fvisibility=default
+	-mtune=generic -mmmx -msse -msse2 -msse3 -msse4 -msse4.1
+	-fvisibility=default -fPIC
+
+	-fno-strict-aliasing -fno-threadsafe-statics
 )
 
-set(PLATFORM_LINKER_OPTIONS)
+set(PLATFORM_LINKER_OPTIONS
+	${PLATFORM_LINKER_OPTIONS}
+)
+
 set(PLATFORM_COMPILE_DEFINITIONS
 	${PLATFORM_COMPILE_DEFINITIONS}
 

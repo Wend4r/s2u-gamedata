@@ -12,7 +12,8 @@
 		},
 		{
 			"name": "Debug",
-			"displayName": "Debug",
+			"displayName": "Debug - Ninja",
+			"generator": "Ninja",
 			"inherits": "default",
 			"cacheVariables":
 			{
@@ -21,7 +22,8 @@
 		},
 		{
 			"name": "Release",
-			"displayName": "Release",
+			"displayName": "Release - Ninja",
+			"generator": "Ninja",
 			"inherits": "default",
 			"cacheVariables":
 			{
