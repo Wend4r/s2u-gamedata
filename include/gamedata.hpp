@@ -256,7 +256,7 @@ namespace GameData
 				}
 
 			public: // BaseListenerCollector<>
-				void Insert(K aKey, OnCollectorChangedCallback funcCallback) override
+				void Insert(K aKey, const OnCollectorChangedCallback &funcCallback) override
 				{
 					auto &map = m_mapCallbacks;
 
@@ -457,12 +457,12 @@ namespace GameData
 		CUtlSymbolLarge FindSymbol(const char *pszText) const;
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(CUtlSymbolLarge sName) const;
-		const ptrdiff_t &GetOffset(CUtlSymbolLarge sName) const;
+		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const;
+		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const;
 
 	protected:
-		void SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory);
-		void SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue);
+		void SetAddress(const CUtlSymbolLarge &sName, const DynLibUtils::CMemory &aMemory);
+		void SetOffset(const CUtlSymbolLarge &sName, const ptrdiff_t &nValue);
 
 	private:
 		CUtlSymbolTableLarge_CI m_aSymbolTable;

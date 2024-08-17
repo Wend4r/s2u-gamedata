@@ -501,22 +501,22 @@ CUtlSymbolLarge GameData::Config::FindSymbol(const char *pszText) const
 	return m_aSymbolTable.Find(pszText);
 }
 
-const DynLibUtils::CMemory &GameData::Config::GetAddress(CUtlSymbolLarge sName) const
+const DynLibUtils::CMemory &GameData::Config::GetAddress(const CUtlSymbolLarge &sName) const
 {
 	return m_aAddressStorage.Get(sName);
 }
 
-const ptrdiff_t &GameData::Config::GetOffset(CUtlSymbolLarge sName) const
+const ptrdiff_t &GameData::Config::GetOffset(const CUtlSymbolLarge &sName) const
 {
 	return m_aOffsetStorage.Get(sName);
 }
 
-void GameData::Config::SetAddress(CUtlSymbolLarge sName, DynLibUtils::CMemory aMemory)
+void GameData::Config::SetAddress(const CUtlSymbolLarge &sName, const DynLibUtils::CMemory &aMemory)
 {
 	m_aAddressStorage.Set(sName, aMemory);
 }
 
-void GameData::Config::SetOffset(CUtlSymbolLarge sName, ptrdiff_t nValue)
+void GameData::Config::SetOffset(const CUtlSymbolLarge &sName, const ptrdiff_t &nValue)
 {
 	m_aOffsetStorage.Set(sName, nValue);
 }
