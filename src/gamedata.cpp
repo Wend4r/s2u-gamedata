@@ -89,14 +89,12 @@ const char *GameData::GetPlatformName(Platform eElm)
 {
 	static const char *s_pszPlatformNames[Platform::PLAT_MAX] =
 	{
-		"windows",
-		"win64",
-
-		"linux",
-		"linuxsteamrt64",
-
-		"mac",
-		"mac64"
+		"win32", // Platform::PLAT_WINDOWS
+		"win64", // Platform::PLAT_WINDOWS64
+		"linuxsteamrt32", // Platform::PLAT_LINUX
+		"linuxsteamrt64", // Platform::PLAT_LINUX64
+		"osx32", // Platform::PLAT_MAC
+		"osx64", // Platform::PLAT_MAC64
 	};
 
 	return s_pszPlatformNames[eElm];
