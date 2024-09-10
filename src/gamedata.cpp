@@ -117,20 +117,16 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 
 	KeyValues3 *pEngineValues = pGameConfig->FindMember(pszEngineName);
 
-	bool bResult = pEngineValues != nullptr;
-
-	if(bResult)
-	{
-		bResult = LoadEngine(pRoot, pEngineValues, vecMessages);
-	}
-	else
+	if(!pEngineValues)
 	{
 		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineName, "\" section"};
 
 		vecMessages.AddToTail({pszMessageConcat});
+
+		return false;
 	}
 
-	return bResult;
+	return LoadEngine(pRoot, pEngineValues, vecMessages);
 }
 
 void GameData::Config::ClearValues()
