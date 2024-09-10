@@ -37,163 +37,151 @@
 		}
 	},
 
-	"properties":
+	"patternProperties":
 	{
-		"Games":
+		"^.*$":
 		{
-			"description": "Games section",
+			"description": "Game folder name",
 
 			"type": "object",
 
-			"patternProperties":
+			"properties":
 			{
-				"^.*$":
+				"Addresses":
 				{
-					"description": "Game folder name",
+					"description": "Addresses section",
 
 					"type": "object",
 
-					"properties":
+					"patternProperties":
 					{
-						"Addresses":
+						"^.*$":
 						{
-							"description": "Addresses section",
+							"description": "A address name",
 
 							"type": "object",
 
-							"patternProperties":
+							"properties":
 							{
-								"^.*$":
+								"signature":
 								{
-									"description": "A address name",
+									"description": "A signarute name from \"Signatures\" section",
 
-									"type": "object",
+									"type": "string"
+								},
 
-									"properties":
-									{
-										"signature":
-										{
-											"description": "A signarute name from \"Signatures\" section",
+								"win64":
+								{
+									"description": "Address actions on Windows side",
 
-											"type": "string"
-										},
+									"$ref": "#/$defs/addressActionsSection"
+								},
 
-										"win64":
-										{
-											"description": "Address actions on Windows side",
+								"linuxsteamrt64":
+								{
+									"description": "Address actions on Linux side",
 
-											"$ref": "#/$defs/addressActionsSection"
-										},
+									"$ref": "#/$defs/addressActionsSection"
+								},
 
-										"linuxsteamrt64":
-										{
-											"description": "Address actions on Linux side",
+								"osx64":
+								{
+									"description": "Address actions on macOS side",
 
-											"$ref": "#/$defs/addressActionsSection"
-										},
-
-										"osx64":
-										{
-											"description": "Address actions on macOS side",
-
-											"$ref": "#/$defs/addressActionsSection"
-										}
-									},
-
-									"required": ["signature"]
+									"$ref": "#/$defs/addressActionsSection"
 								}
-							}
-						},
+							},
 
-						"Keys":
+							"required": ["signature"]
+						}
+					}
+				},
+
+				"Keys":
+				{
+					"description": "Keys section",
+
+					"type": "object",
+
+					"patternProperties":
+					{
+						"^.*$":
 						{
-							"description": "Keys section",
+							"description": "A key name",
 
 							"type": "object",
 
-							"patternProperties":
+							"properties":
 							{
-								"^.*$":
+								"win64":
 								{
-									"description": "A key name",
+									"type": "string"
+								},
 
-									"type": "object",
-
-									"properties":
-									{
-										"win64":
-										{
-											"type": "string"
-										},
-
-										"linuxsteamrt64":
-										{
-											"type": "string"
-										},
-
-										"osx64":
-										{
-											"type": "string"
-										}
-									}
-								}
-							}
-						},
-
-						"Signatures":
-						{
-							"description": "Signatures section",
-
-							"type": "object",
-
-							"patternProperties":
-							{
-								"^.*$":
+								"linuxsteamrt64":
 								{
-									"description": "A signature name",
+									"type": "string"
+								},
 
-									"type": "object",
-
-									"properties":
-									{
-										"library":
-										{
-											"description": "Library shared name",
-
-											"type": "string"
-										},
-
-										"win64":
-										{
-											"description": "A signature bytes string on Windows side. Passes ? to skip a byte",
-
-											"type": "string"
-										},
-
-										"linuxsteamrt64":
-										{
-											"description": "A signature bytes string on Linux side. Passes ? to skip a byte",
-
-											"type": "string"
-										},
-
-										"osx64":
-										{
-											"description": "A signature bytes string on macOS side. Passes ? to skip a byte",
-
-											"type": "string"
-										}
-									},
-
-									"required": ["library"]
+								"osx64":
+								{
+									"type": "string"
 								}
 							}
 						}
 					}
-				}
-			},
+				},
 
-			"required": ["csgo"]
+				"Signatures":
+				{
+					"description": "Signatures section",
+
+					"type": "object",
+
+					"patternProperties":
+					{
+						"^.*$":
+						{
+							"description": "A signature name",
+
+							"type": "object",
+
+							"properties":
+							{
+								"library":
+								{
+									"description": "Library shared name",
+
+									"type": "string"
+								},
+
+								"win64":
+								{
+									"description": "A signature bytes string on Windows side. Passes ? to skip a byte",
+
+									"type": "string"
+								},
+
+								"linuxsteamrt64":
+								{
+									"description": "A signature bytes string on Linux side. Passes ? to skip a byte",
+
+									"type": "string"
+								},
+
+								"osx64":
+								{
+									"description": "A signature bytes string on macOS side. Passes ? to skip a byte",
+
+									"type": "string"
+								}
+							},
+
+							"required": ["library"]
+						}
+					}
+				}
+			}
 		}
 	}
 }
