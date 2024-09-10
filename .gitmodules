@@ -1,6 +1,0 @@
-[submodule "DynLibUtils"]
-	path = external/memory_utils
-	url = https://github.com/Wend4r/cpp-memory_utils.git
-[submodule "HL2SDK"]
-	path = external/hl2sdk
-	url = https://github.com/Wend4r/hl2sdk.git

@@ -428,6 +428,7 @@ namespace GameData
 
 	public:
 		using Addresses = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
+		using Keys = Storage<CUtlSymbolLarge, CUtlString>;
 		using Offsets = Storage<CUtlSymbolLarge, ptrdiff_t>;
 
 	public:
@@ -446,6 +447,7 @@ namespace GameData
 		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);
 
 		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages);
+		bool LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues, CBufferStringVector &vecMessages);
 		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages);
 
 		// Step #2 - addresses.
@@ -458,16 +460,19 @@ namespace GameData
 
 	public:
 		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const;
+		const CUtlString &GetKey(const CUtlSymbolLarge &sName) const;
 		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const;
 
 	protected:
 		void SetAddress(const CUtlSymbolLarge &sName, const DynLibUtils::CMemory &aMemory);
+		void SetKey(const CUtlSymbolLarge &sName, const CUtlString &sValue);
 		void SetOffset(const CUtlSymbolLarge &sName, const ptrdiff_t &nValue);
 
 	private:
 		CUtlSymbolTableLarge_CI m_aSymbolTable;
 
 		Addresses m_aAddressStorage;
+		Keys m_aKeysStorage;
 		Offsets m_aOffsetStorage;
 	}; // GameData::Config
 }; // GameData

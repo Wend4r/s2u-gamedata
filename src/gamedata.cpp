@@ -45,7 +45,7 @@ DLL_IMPORT IServerGameDLL *server;
 const char *GameData::GetSourceEngineName()
 {
 #if SOURCE_ENGINE == SE_CS2
-	return "cs2";
+	return "csgo";
 #elif SOURCE_ENGINE == SE_DOTA
 	return "dota";
 #else
@@ -89,14 +89,12 @@ const char *GameData::GetPlatformName(Platform eElm)
 {
 	static const char *s_pszPlatformNames[Platform::PLAT_MAX] =
 	{
-		"windows",
-		"win64",
-
-		"linux",
-		"linuxsteamrt64",
-
-		"mac",
-		"mac64"
+		"win32", // Platform::PLAT_WINDOWS
+		"win64", // Platform::PLAT_WINDOWS64
+		"linuxsteamrt32", // Platform::PLAT_LINUX
+		"linuxsteamrt64", // Platform::PLAT_LINUX64
+		"osx32", // Platform::PLAT_MAC
+		"osx64", // Platform::PLAT_MAC64
 	};
 
 	return s_pszPlatformNames[eElm];
@@ -119,20 +117,16 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 
 	KeyValues3 *pEngineValues = pGameConfig->FindMember(pszEngineName);
 
-	bool bResult = pEngineValues != nullptr;
-
-	if(bResult)
-	{
-		bResult = LoadEngine(pRoot, pEngineValues, vecMessages);
-	}
-	else
+	if(!pEngineValues)
 	{
 		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineName, "\" section"};
 
 		vecMessages.AddToTail({pszMessageConcat});
+
+		return false;
 	}
 
-	return bResult;
+	return LoadEngine(pRoot, pEngineValues, vecMessages);
 }
 
 void GameData::Config::ClearValues()
@@ -162,6 +156,10 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 		{
 			"Signatures",
 			&GameData::Config::LoadEngineSignatures
+		},
+		{
+			"Keys",
+			&GameData::Config::LoadEngineKeys
 		},
 		{
 			"Offsets",
@@ -280,6 +278,50 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 		}
 
 		SetAddress(GetSymbol(pszSigName), pSigResult);
+
+		i++;
+	}
+	while(i < iMemberCount);
+
+	return true;
+}
+
+bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues, CBufferStringVector &vecMessages)
+{
+	int iMemberCount = pKeysValues->GetMemberCount();
+
+	if(!iMemberCount)
+	{
+		static const char *s_pszMessageConcat[] = {"Keys section is empty"};
+
+		vecMessages.AddToTail(s_pszMessageConcat);
+
+		return false;
+	}
+
+	KV3MemberId_t i = 0;
+
+	const char *pszPlatformKey = GameData::GetCurrentPlatformName();
+
+	do
+	{
+		KeyValues3 *pKeySection = pKeysValues->GetMember(i);
+
+		const char *pszKeyName = pKeysValues->GetMemberName(i);
+
+		KeyValues3 *pPlatformValues = pKeySection->FindMember(pszPlatformKey);
+
+		if(!pPlatformValues)
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "get ", " platform ", "(\"", pszPlatformKey, "\" key)", "at \"", pszKeyName, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		SetKey(GetSymbol(pszKeyName), pPlatformValues->GetString());
 
 		i++;
 	}
@@ -520,6 +562,11 @@ const ptrdiff_t &GameData::Config::GetOffset(const CUtlSymbolLarge &sName) const
 void GameData::Config::SetAddress(const CUtlSymbolLarge &sName, const DynLibUtils::CMemory &aMemory)
 {
 	m_aAddressStorage.Set(sName, aMemory);
+}
+
+void GameData::Config::SetKey(const CUtlSymbolLarge &sName, const CUtlString &sValue)
+{
+	m_aKeysStorage.Set(sName, sValue);
 }
 
 void GameData::Config::SetOffset(const CUtlSymbolLarge &sName, const ptrdiff_t &nValue)
