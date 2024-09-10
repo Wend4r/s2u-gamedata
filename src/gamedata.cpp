@@ -45,7 +45,7 @@ DLL_IMPORT IServerGameDLL *server;
 const char *GameData::GetSourceEngineName()
 {
 #if SOURCE_ENGINE == SE_CS2
-	return "cs2";
+	return "csgo";
 #elif SOURCE_ENGINE == SE_DOTA
 	return "dota";
 #else
