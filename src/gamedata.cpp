@@ -68,6 +68,12 @@ GameData::Platform GameData::GetCurrentPlatform()
 #	else
 	return Platform::PLAT_LINUX;
 #	endif
+#elif defined(_OSX)
+#	if defined(X64BITS)
+	return Platform::PLAT_MAC64;
+#	else
+	return Platform::PLAT_MAC;
+#	endif
 #else
 #	error Unsupported platform
 	return Platform::PLAT_UNKNOWN;
