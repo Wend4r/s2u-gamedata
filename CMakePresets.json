@@ -5,15 +5,18 @@
 		{
 			"name": "default",
 			"displayName": "Default Config",
-			"description": "Default build using Ninja generator",
+			"description": "Build using Ninja generator",
 			"generator": "Ninja",
 			"binaryDir": "${sourceDir}/build/${presetName}",
+			"cacheVariables":
+			{
+				"SOURCESDK_MALLOC_OVERRIDE": true
+			},
 			"hidden": true
 		},
 		{
 			"name": "Debug",
 			"displayName": "Debug - Ninja",
-			"generator": "Ninja",
 			"inherits": "default",
 			"cacheVariables":
 			{
@@ -23,7 +26,6 @@
 		{
 			"name": "Release",
 			"displayName": "Release - Ninja",
-			"generator": "Ninja",
 			"inherits": "default",
 			"cacheVariables":
 			{
@@ -32,22 +34,26 @@
 		},
 		{
 			"name": "Windows/Debug",
+			"description": "Debug configuration for building with Visual Studio",
 			"displayName": "Debug - Visual Studio 2022",
 			"generator": "Visual Studio 17 2022",
 			"inherits": "default",
 			"cacheVariables":
 			{
-				"CMAKE_BUILD_TYPE": "Debug"
+				"CMAKE_BUILD_TYPE": "Debug",
+				"SOURCESDK_MALLOC_OVERRIDE": false
 			}
 		},
 		{
 			"name": "Windows/Release",
+			"description": "Release configuration for building with Visual Studio",
 			"displayName": "Release - Visual Studio 2022",
 			"generator": "Visual Studio 17 2022",
 			"inherits": "default",
 			"cacheVariables":
 			{
-				"CMAKE_BUILD_TYPE": "Release"
+				"CMAKE_BUILD_TYPE": "Release",
+				"SOURCESDK_MALLOC_OVERRIDE": false
 			}
 		}
 	],
