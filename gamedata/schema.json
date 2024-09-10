@@ -39,7 +39,7 @@
 
 	"patternProperties":
 	{
-		"^.*$":
+		"^(?:(?!\\$).*)$":
 		{
 			"description": "Game folder name",
 
