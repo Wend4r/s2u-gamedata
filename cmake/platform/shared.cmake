@@ -1,9 +1,9 @@
-# GameData
-# Copyright (C) 2023-2024 Wend4r
-# Licensed under the GPLv3 license. See LICENSE file in the project root for details.
-
-if(UNIX AND NOT APPLE)
-	set(LINUX TRUE)
+if(UNIX)
+	if(APPLE)
+		set(MACOS TRUE)
+	else()
+		set(LINUX TRUE)
+	endif()
 endif()
 
 if(WIN32)

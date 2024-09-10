@@ -7,6 +7,7 @@ on:
       - '.github/workflows/**.yml'
       - 'cmake/**'
       - 'external/**'
+      - 'include/**'
       - 'src/**'
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
@@ -17,18 +18,32 @@ on:
       - '.github/workflows/**.yml'
       - 'cmake/**'
       - 'external/**'
+      - 'include/**'
       - 'src/**'
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
       - 'trigger-build.txt'
 
 env:
+  CMAKE_DEBUG_PRESET_NAME: Windows/Debug
+  CMAKE_DEBUG_PRESET_PUBLIC_NAME: Debug
+  CMAKE_DEBUG_CONFIG_NAME: Debug
+  CMAKE_DEBUG_OUTPUT_PATTERN: build/Windows/Debug/Debug/*
   CMAKE_RELEASE_PRESET_NAME: Windows/Release
   CMAKE_RELEASE_PRESET_PUBLIC_NAME: Release
   CMAKE_RELEASE_CONFIG_NAME: Release
   CMAKE_RELEASE_OUTPUT_PATTERN: build/Windows/Release/Release/*
-  CL_CC: cl
-  CL_CXX: cl
+  MSVC_CC: cl
+  MSVC_CXX: cl
+  MSVC_NAME: MSVC
+
+  DYNLIBUTILS_REPOSITORY: Wend4r/cpp-memory_utils
+  DYNLIBUTILS_BRANCH: main
+  DYNLIBUTILS_ROOT: external/memory_utils
+
+  SOURCESDK_REPOSITORY: Wend4r/sourcesdk
+  SOURCESDK_BRANCH: main
+  SOURCESDK_ROOT: external/sourcesdk
 
 jobs:
   build:
@@ -40,8 +55,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: recursive
         fetch-depth: 0
+        fetch-tags: true
 
     - name: Set up environment variables
       run: |
@@ -65,11 +81,44 @@ jobs:
         }
       shell: pwsh
 
+    - name: Checkout DynLibUtils
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.DYNLIBUTILS_REPOSITORY }}
+        ref: ${{ env.DYNLIBUTILS_BRANCH }}
+        path: ${{ env.DYNLIBUTILS_ROOT }}
+
+    - name: Checkout Source SDK
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.SOURCESDK_REPOSITORY }}
+        ref: ${{ env.SOURCESDK_BRANCH }}
+        path: ${{ env.SOURCESDK_ROOT }}
+
+    - name: Debug - Configure CMake
+      run: >
+        cmake --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }}
+        -DCMAKE_C_COMPILER=${{ env.MSVC_CC }}
+        -DCMAKE_CXX_COMPILER=${{ env.MSVC_CXX }}
+        -DDYNLIBUTILS_DIR=${{ env.DYNLIBUTILS_ROOT }}
+        -DSOURCESDK_DIR=${{ env.SOURCESDK_ROOT }}
+
+    - name: Debug - Build
+      run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
+
+    - name: Debug - Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.MSVC_NAME }}-${{ env.CMAKE_DEBUG_PRESET_PUBLIC_NAME }}
+        path: ${{ env.CMAKE_DEBUG_OUTPUT_PATTERN }}
+
     - name: Release - Configure CMake
       run: >
         cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
-        -DCMAKE_C_COMPILER=${{ env.CL_CC }}
-        -DCMAKE_CXX_COMPILER=${{ env.CL_CXX }}
+        -DCMAKE_C_COMPILER=${{ env.MSVC_CC }}
+        -DCMAKE_CXX_COMPILER=${{ env.MSVC_CXX }}
+        -DDYNLIBUTILS_DIR=${{ env.DYNLIBUTILS_ROOT }}
+        -DSOURCESDK_DIR=${{ env.SOURCESDK_ROOT }}
 
     - name: Release - Build
       run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}
@@ -77,5 +126,5 @@ jobs:
     - name: Release - Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}_${{ env.CMAKE_RELEASE_PRESET_PUBLIC_NAME }}
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.MSVC_NAME }}-${{ env.CMAKE_RELEASE_PRESET_PUBLIC_NAME }}
         path: ${{ env.CMAKE_RELEASE_OUTPUT_PATTERN }}

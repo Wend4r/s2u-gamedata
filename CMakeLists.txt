@@ -32,26 +32,24 @@ set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 if(SOURCESDK_DIR)
 	file(TO_CMAKE_PATH "${SOURCESDK_DIR}" SOURCESDK_DIR)
-else()
-	set(SOURCESDK_DIR "${EXTERNAL_DIR}/hl2sdk")
 endif()
 
 if(DYNLIBUTILS_DIR)
 	file(TO_CMAKE_PATH "${DYNLIBUTILS_DIR}" DYNLIBUTILS_DIR)
-else()
-	set(DYNLIBUTILS_DIR "${EXTERNAL_DIR}/memory_utils")
 endif()
 
-include("cmake/platform/shared.cmake")
+include(cmake/platform/shared.cmake)
 
-if(LINUX)
-	include("cmake/platform/linux.cmake")
-elseif(WINDOWS)
-	include("cmake/platform/windows.cmake")
+if(WINDOWS)
+	include(cmake/platform/windows.cmake)
+elseif(LINUX)
+	include(cmake/platform/linux.cmake)
+elseif(MACOS)
+	include(cmake/platform/macos.cmake)
 endif()
 
-include("cmake/dynlibutils.cmake")
-include("cmake/sourcesdk.cmake")
+include(cmake/dynlibutils.cmake)
+include(cmake/sourcesdk.cmake)
 
 set(SOURCE_FILES
 	${SOURCE_DIR}/gamedata.cpp
@@ -59,20 +57,28 @@ set(SOURCE_FILES
 
 add_library(${PROJECT_NAME} STATIC ${SOURCE_FILES})
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 17)
-set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD_REQUIRED ON)
-set_property(TARGET ${PROJECT_NAME} PROPERTY C_EXTENSIONS OFF)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+	C_STANDARD 17
+	C_STANDARD_REQUIRED ON
+	C_EXTENSIONS OFF
 
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
-set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_EXTENSIONS OFF)
+	CXX_STANDARD 17
+	CXX_STANDARD_REQUIRED ON
+	CXX_EXTENSIONS OFF
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_OUTPUT_NAME})
 
-target_compile_options(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILER_OPTIONS})
-target_link_options(${PROJECT_NAME} PRIVATE ${PLATFORM_LINKER_OPTIONS})
+if(WINDOWS)
+	set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(MACOS)
+	set_target_properties(${PROJECT_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
+endif()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINTIONS})
-target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR} ${DYNLIBUTILS_INCLUDE_DIR} ${SOURCESDK_INCLUDE_DIR})
+target_compile_options(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILE_OPTIONS})
+target_link_options(${PROJECT_NAME} PRIVATE ${PLATFORM_LINK_OPTIONS})
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINITIONS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIR} ${DYNLIBUTILS_INCLUDE_DIRS} ${SOURCESDK_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${DYNLIBUTILS_BINARY_DIR} ${SOURCESDK_LIBRARIES})
