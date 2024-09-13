@@ -1,3 +1,7 @@
+# GameData
+# Copyright (C) 2024 Wend4r
+# Licensed under the GPLv3 license. See LICENSE file in the project root for details.
+
 set(PLATFORM_COMPILE_OPTIONS
 	${PLATFORM_COMPILE_OPTIONS}
 
