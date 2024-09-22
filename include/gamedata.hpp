@@ -32,6 +32,7 @@
 
 #include <stddef.h>
 
+#include <map>
 #include <functional>
 
 #include <tier0/platform.h>
@@ -47,7 +48,7 @@
 	decltype(map)::InvalidIndex()
 
 #define IS_VALID_GAMEDATA_INDEX(i, map) \
-	(i != INVALID_GAMEDATA_INDEX(map))
+	(i != map.cend())
 
 class KeyValues3;
 
@@ -124,7 +125,6 @@ namespace GameData
 			}; // GameData::Config::Storage::IListener
 
 			Storage()
-			 :  m_mapValues(DefLessFunc(const CUtlSymbolLarge))
 			{
 			}
 
@@ -144,7 +144,6 @@ namespace GameData
 
 			public:
 				BaseListenerCollector()
-				 :  m_mapCallbacks(DefLessFunc(const CUtlSymbolLarge))
 				{
 				}
 
@@ -154,11 +153,11 @@ namespace GameData
 
 				virtual void RemoveAll()
 				{
-					m_mapCallbacks.Purge();
+					m_mapCallbacks.clear();
 				}
 
 			protected:
-				CUtlMap<K, T> m_mapCallbacks;
+				std::map<K, T> m_mapCallbacks;
 			}; // GameData::Config::Storage::BaseListenerCollector
 
 			class ListenerCallbacksCollector : public BaseListenerCollector<OnCollectorChangedCallback>
@@ -175,17 +174,17 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFoundIndex = map.find(aKey);
 
 					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = *iFoundIndex;
 
-						it = funcCallback;
+						map[aKey] = funcCallback;
 					}
 					else
 					{
-						map.Insert(aKey, funcCallback);
+						auto i = map.emplace(aKey, funcCallback);
 					}
 				}
 
@@ -193,13 +192,13 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFoundIndex = map.find(aKey);
 
 					bool bResult = IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks);
 
 					if(bResult)
 					{
-						map.RemoveAt(iFoundIndex);
+						map.erase(iFoundIndex);
 					}
 
 					return bResult;
@@ -210,13 +209,13 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFoundIndex = map.find(aKey);
 
 					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = *iFoundIndex;
 
-						it(aKey, aValue);
+						(it.second)(aKey, aValue);
 					}
 				}
 			}; // GameData::Config::Storage::ListenerCallbacksCollector
@@ -238,11 +237,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFoundIndex = map.find(aKey);
 
 					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = *iFoundIndex;
 
 						it.AddVectorToTail(vecCallbacks);
 					}
@@ -251,7 +250,7 @@ namespace GameData
 						BaseVector vecNewOne;
 
 						vecNewOne.AddVectorToTail(vecCallbacks);
-						map.Insert(vecNewOne);
+						map.emplace(vecNewOne);
 					}
 				}
 
@@ -260,11 +259,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFoundIndex = map.find(aKey);
 
 					if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = *iFoundIndex;
 
 						it.AddToTail(funcCallback);
 					}
@@ -273,7 +272,7 @@ namespace GameData
 						BaseVector vecNewOne;
 
 						vecNewOne.AddToTail(funcCallback);
-						map.Insert(vecNewOne);
+						map.emplace(vecNewOne);
 					}
 				}
 
@@ -281,13 +280,13 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFoundIndex = map.find(aKey);
 
 					bool bResult = IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks);
 
 					if(bResult)
 					{
-						map.RemoveAt(iFoundIndex);
+						map.erase(iFoundIndex);
 					}
 
 					return bResult;
@@ -298,11 +297,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFoundIndex = map.find(aKey);
 
 					Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapCallbacks));
 
-					auto &itVec = map.Element(iFoundIndex);
+					auto &itVec = *iFoundIndex;
 
 					FOR_EACH_VEC(itVec, i)
 					{
@@ -316,7 +315,7 @@ namespace GameData
 		public:
 			void ClearValues()
 			{
-				m_mapValues.Purge();
+				m_mapValues.clear();
 			}
 
 			void ClearListeners()
@@ -329,20 +328,20 @@ namespace GameData
 			{
 				auto &map = m_mapValues;
 
-				auto iFoundIndex = map.Find(aKey);
+				auto iFoundIndex = map.find(aKey);
 
-				return map.Element(iFoundIndex);
+				return *iFoundIndex;
 			}
 
 			const V &Get(const K &aKey) const
 			{
 				auto &map = m_mapValues;
 
-				auto iFoundIndex = map.Find(aKey);
+				auto iFoundIndex = map.find(aKey);
 
 				Assert(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues));
 
-				return map.Element(iFoundIndex);
+				return iFoundIndex->second;
 			}
 
 			void TriggerCallbacks()
@@ -358,17 +357,17 @@ namespace GameData
 			{
 				auto &map = m_mapValues;
 
-				auto iFoundIndex = map.Find(aKey);
+				auto iFoundIndex = map.find(aKey);
 
 				if(IS_VALID_GAMEDATA_INDEX(iFoundIndex, m_mapValues))
 				{
-					auto &it = map.Element(iFoundIndex);
+					auto &it = *iFoundIndex;
 
-					it = aValue;
+					map[aKey] = aValue;
 				}
 				else
 				{
-					map.Insert(aKey, aValue);
+					map.emplace(aKey, aValue);
 				}
 
 				OnChanged(aKey, aValue);
@@ -422,7 +421,7 @@ namespace GameData
 			}
 
 		private:
-			CUtlMap<K, V> m_mapValues;
+			std::map<K, V> m_mapValues;
 			CUtlVector<IListener *> m_vecListeners;
 		}; // GameData::Config::Storage
 
