@@ -105,8 +105,9 @@ ptrdiff_t GameData::ReadOffset(const char *pszValue)
 	return static_cast<ptrdiff_t>(strtol(pszValue, NULL, 0));
 }
 
-GameData::Config::Config(const Addresses &aAddressStorage, const Offsets &aOffsetsStorage)
+GameData::Config::Config(const Addresses &aAddressStorage, const Keys &aKeysStorage, const Offsets &aOffsetsStorage)
  :  m_aAddressStorage(aAddressStorage), 
+    m_aKeysStorage(aKeysStorage), 
     m_aOffsetStorage(aOffsetsStorage)
 {
 }

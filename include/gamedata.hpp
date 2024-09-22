@@ -433,7 +433,7 @@ namespace GameData
 
 	public:
 		Config() = default;
-		explicit Config(const Addresses &aInitAddressStorage, const Offsets &aInitOffsetsStorage);
+		explicit Config(const Addresses &aInitAddressStorage, const Keys &aInitKeysStorage, const Offsets &aInitOffsetsStorage);
 
 	public:
 		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages);
