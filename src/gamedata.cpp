@@ -554,6 +554,11 @@ const DynLibUtils::CMemory &GameData::Config::GetAddress(const CUtlSymbolLarge &
 	return m_aAddressStorage.Get(sName);
 }
 
+const CUtlString &GameData::Config::GetKey(const CUtlSymbolLarge &sName) const
+{
+	return m_aKeysStorage.Get(sName);
+}
+
 const ptrdiff_t &GameData::Config::GetOffset(const CUtlSymbolLarge &sName) const
 {
 	return m_aOffsetStorage.Get(sName);
