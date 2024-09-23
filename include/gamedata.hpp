@@ -47,7 +47,7 @@
 	decltype(map)::InvalidIndex()
 
 #define IS_VALID_GAMEDATA_INDEX(i, map) \
-	(i != INVALID_GAMEDATA_INDEX(map))
+	(map.IsValidIndex(i))
 
 class KeyValues3;
 
