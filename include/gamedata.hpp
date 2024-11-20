@@ -84,7 +84,7 @@ namespace GameData
 
 	using CBufferStringVector = CUtlVector<CBufferStringConcat>;
 
-	static const char *GetSourceEngineName();
+	static const CKV3MemberName &GetSourceEngineMemberName();
 
 	enum Platform : int
 	{

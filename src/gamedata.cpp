@@ -56,12 +56,12 @@ static CKV3MemberName s_pszPlatformMemberNames[Platform::PLAT_MAX] =
 DLL_IMPORT IVEngineServer *engine;
 DLL_IMPORT IServerGameDLL *server;
 
-const char *GameData::GetSourceEngineName()
+const CKV3MemberName &GameData::GetSourceEngineMemberName()
 {
 #if SOURCE_ENGINE == SE_CS2
-	return "csgo";
+	return CKV3MemberName("csgo");
 #elif SOURCE_ENGINE == SE_DOTA
-	return "dota";
+	return CKV3MemberName("dota");
 #else
 #	error "Unknown engine type"
 	return "unknown";
@@ -118,13 +118,15 @@ GameData::Config::Config(const Addresses &aAddressStorage, const Keys &aKeysStor
 
 bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages)
 {
-	const char *pszEngineName = GameData::GetSourceEngineName();
+	auto aEngineMemberName = GameData::GetSourceEngineMemberName();
 
-	KeyValues3 *pEngineValues = pGameConfig->FindMember(CKV3MemberName::Make(pszEngineName));
+	const char *pszEngineKey = aEngineMemberName.GetString();
+
+	KeyValues3 *pEngineValues = pGameConfig->FindMember(aEngineMemberName);
 
 	if(!pEngineValues)
 	{
-		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineName, "\" section"};
+		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineKey, "\" section"};
 
 		vecMessages.AddToTail({pszMessageConcat});
 
@@ -221,7 +223,9 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 	KV3MemberId_t i = 0;
 
-	const char *pszLibraryKey = "library";
+	const auto aLibraryMemberName = CKV3MemberName("library");
+
+	const char *pszLibraryKey = aLibraryMemberName.GetString();
 
 	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
 
@@ -233,7 +237,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		const char *pszSigName = pSignaturesValues->GetMemberName(i);
 
-		KeyValues3 *pLibraryValues = pSigSection->FindMember(aPlatformMemberName);
+		KeyValues3 *pLibraryValues = pSigSection->FindMember(aLibraryMemberName);
 
 		if(!pLibraryValues)
 		{
