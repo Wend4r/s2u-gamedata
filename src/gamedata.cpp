@@ -40,8 +40,9 @@ class IServerGameDLL;
 #endif
 
 using Platform = GameData::Platform;
+using Game = GameData::Game;
 
-static CKV3MemberName s_pszPlatformMemberNames[Platform::PLAT_MAX] =
+static CKV3MemberName s_aPlatformMemberNames[Platform::PLAT_MAX] =
 {
 	CKV3MemberName("windows"), // Platform::PLAT_WINDOWS
 	CKV3MemberName("win64"), // Platform::PLAT_WINDOWS64
@@ -53,15 +54,22 @@ static CKV3MemberName s_pszPlatformMemberNames[Platform::PLAT_MAX] =
 	CKV3MemberName("osx64"), // Platform::PLAT_MAC64
 };
 
+
+static CKV3MemberName s_aGameMemberNames[Game::GAME_MAX] =
+{
+	CKV3MemberName("csgo"), // Game::GAME_CSGO
+	CKV3MemberName("dota"), // Game::GAME_DOTA
+};
+
 DLL_IMPORT IVEngineServer *engine;
 DLL_IMPORT IServerGameDLL *server;
 
 const CKV3MemberName &GameData::GetSourceEngineMemberName()
 {
 #if SOURCE_ENGINE == SE_CS2
-	return CKV3MemberName("csgo");
+	return s_aGameMemberNames[GAME_CSGO];
 #elif SOURCE_ENGINE == SE_DOTA
-	return CKV3MemberName("dota");
+	return s_aGameMemberNames[GAME_DOTA];
 #else
 #	error "Unknown engine type"
 	return "unknown";
@@ -101,7 +109,7 @@ const CKV3MemberName &GameData::GetCurrentPlatformMemberName()
 
 const CKV3MemberName &GameData::GetPlatformMemberName(Platform eElm)
 {
-	return s_pszPlatformMemberNames[eElm];
+	return s_aPlatformMemberNames[eElm];
 }
 
 ptrdiff_t GameData::ReadOffset(const char *pszValue)

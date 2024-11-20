@@ -103,6 +103,17 @@ namespace GameData
 		PLAT_MAX
 	}; // GameData::Platform
 
+	enum Game : int
+	{
+		GAME_UNKNOWN = -1,
+		GAME_FIRST = 0,
+
+		GAME_CSGO = 0,
+		GAME_DOTA,
+
+		GAME_MAX
+	}; // GameData::Game
+
 	inline static Platform GetCurrentPlatform();
 	inline static const CKV3MemberName &GetCurrentPlatformMemberName();
 	inline static const CKV3MemberName &GetPlatformMemberName(Platform eElm);
