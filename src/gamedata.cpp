@@ -39,6 +39,20 @@ class IFileSystem;
 class IServerGameDLL;
 #endif
 
+using Platform = GameData::Platform;
+
+static CKV3MemberName s_pszPlatformMemberNames[Platform::PLAT_MAX] =
+{
+	CKV3MemberName("windows"), // Platform::PLAT_WINDOWS
+	CKV3MemberName("win64"), // Platform::PLAT_WINDOWS64
+
+	CKV3MemberName("linux"), // Platform::PLAT_LINUX
+	CKV3MemberName("linuxsteamrt64"), // Platform::PLAT_LINUX64
+
+	CKV3MemberName("mac"), // Platform::PLAT_MAC
+	CKV3MemberName("osx64"), // Platform::PLAT_MAC64
+};
+
 DLL_IMPORT IVEngineServer *engine;
 DLL_IMPORT IServerGameDLL *server;
 
@@ -80,24 +94,14 @@ GameData::Platform GameData::GetCurrentPlatform()
 #endif
 }
 
-const char *GameData::GetCurrentPlatformName()
+const CKV3MemberName &GameData::GetCurrentPlatformMemberName()
 {
-	return GetPlatformName(GetCurrentPlatform());
+	return GetPlatformMemberName(GetCurrentPlatform());
 }
 
-const char *GameData::GetPlatformName(Platform eElm)
+const CKV3MemberName &GameData::GetPlatformMemberName(Platform eElm)
 {
-	static const char *s_pszPlatformNames[Platform::PLAT_MAX] =
-	{
-		"win32", // Platform::PLAT_WINDOWS
-		"win64", // Platform::PLAT_WINDOWS64
-		"linuxsteamrt32", // Platform::PLAT_LINUX
-		"linuxsteamrt64", // Platform::PLAT_LINUX64
-		"osx32", // Platform::PLAT_MAC
-		"osx64", // Platform::PLAT_MAC64
-	};
-
-	return s_pszPlatformNames[eElm];
+	return s_pszPlatformMemberNames[eElm];
 }
 
 ptrdiff_t GameData::ReadOffset(const char *pszValue)
@@ -116,7 +120,7 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 {
 	const char *pszEngineName = GameData::GetSourceEngineName();
 
-	KeyValues3 *pEngineValues = pGameConfig->FindMember(pszEngineName);
+	KeyValues3 *pEngineValues = pGameConfig->FindMember(CKV3MemberName::Make(pszEngineName));
 
 	if(!pEngineValues)
 	{
@@ -217,8 +221,11 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 	KV3MemberId_t i = 0;
 
-	const char *pszLibraryKey = "library", 
-	           *pszPlatformKey = GameData::GetCurrentPlatformName();
+	const char *pszLibraryKey = "library";
+
+	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+
+	const char *pszPlatformKey = aPlatformMemberName.GetString();
 
 	do
 	{
@@ -226,7 +233,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		const char *pszSigName = pSignaturesValues->GetMemberName(i);
 
-		KeyValues3 *pLibraryValues = pSigSection->FindMember(pszLibraryKey);
+		KeyValues3 *pLibraryValues = pSigSection->FindMember(aPlatformMemberName);
 
 		if(!pLibraryValues)
 		{
@@ -252,7 +259,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 			continue;
 		}
 
-		KeyValues3 *pPlatformValues = pSigSection->FindMember(pszPlatformKey);
+		KeyValues3 *pPlatformValues = pSigSection->FindMember(aPlatformMemberName);
 
 		if(!pPlatformValues)
 		{
@@ -302,7 +309,9 @@ bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues,
 
 	KV3MemberId_t i = 0;
 
-	const char *pszPlatformKey = GameData::GetCurrentPlatformName();
+	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+
+	const char *pszPlatformKey = aPlatformMemberName.GetString();
 
 	do
 	{
@@ -310,7 +319,7 @@ bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues,
 
 		const char *pszKeyName = pKeysValues->GetMemberName(i);
 
-		KeyValues3 *pPlatformValues = pKeySection->FindMember(pszPlatformKey);
+		KeyValues3 *pPlatformValues = pKeySection->FindMember(aPlatformMemberName);
 
 		if(!pPlatformValues)
 		{
@@ -346,7 +355,9 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 
 	KV3MemberId_t i = 0;
 
-	const char *pszPlatformKey = GameData::GetCurrentPlatformName();
+	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+
+	const char *pszPlatformKey = aPlatformMemberName.GetString();
 
 	do
 	{
@@ -354,7 +365,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 
 		const char *pszOffsetName = pOffsetsValues->GetMemberName(i);
 
-		KeyValues3 *pPlatformValues = pOffsetSection->FindMember(pszPlatformKey);
+		KeyValues3 *pPlatformValues = pOffsetSection->FindMember(aPlatformMemberName);
 
 		if(!pPlatformValues)
 		{
@@ -390,7 +401,9 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 	KV3MemberId_t i = 0;
 
-	const char *pszSignatureKey = "signature";
+	const auto aSignatureMemberName = CKV3MemberName("signature");
+
+	const char *pszSignatureKey = aSignatureMemberName.GetString();
 
 	CBufferStringVector vecSubMessages;
 
@@ -400,7 +413,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		const char *pszAddressName = pAddressesValues->GetMemberName(i);
 
-		KeyValues3 *pSignatureValues = pAddrSection->FindMember(pszSignatureKey);
+		KeyValues3 *pSignatureValues = pAddrSection->FindMember(aSignatureMemberName);
 
 		if(!pSignatureValues)
 		{
@@ -438,7 +451,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 			{
 				if(iCurrentPlat != iPlat)
 				{
-					pAddrSection->RemoveMember(GetPlatformName((Platform)iPlat));
+					pAddrSection->RemoveMember(GetPlatformMemberName((Platform)iPlat));
 				}
 			}
 		}
@@ -485,6 +498,10 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 		return false;
 	}
 
+	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+
+	const char *pszPlatformKey = aPlatformMemberName.GetString();
+
 	KV3MemberId_t i = 0;
 
 	do
@@ -519,7 +536,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 				continue;
 			}
 		}
-		else if(!strcmp(pszName, GameData::GetCurrentPlatformName()))
+		else if(!strcmp(pszName, pszPlatformKey))
 		{
 			return LoadEngineAddressActions(pRoot, pAddrCur, pAction, vecMessages); // Recursive by platform.
 		}

@@ -42,6 +42,7 @@
 #include <tier1/utlmap.h>
 #include <tier1/utlrbtree.h>
 #include <tier1/utlvector.h>
+#include <tier1/keyvalues3.h>
 
 #define INVALID_GAMEDATA_INDEX(map) \
 	decltype(map)::InvalidIndex()
@@ -103,8 +104,8 @@ namespace GameData
 	}; // GameData::Platform
 
 	inline static Platform GetCurrentPlatform();
-	inline static const char *GetCurrentPlatformName();
-	inline static const char *GetPlatformName(Platform eElm);
+	inline static const CKV3MemberName &GetCurrentPlatformMemberName();
+	inline static const CKV3MemberName &GetPlatformMemberName(Platform eElm);
 
 	static ptrdiff_t ReadOffset(const char *pszValue);
 
