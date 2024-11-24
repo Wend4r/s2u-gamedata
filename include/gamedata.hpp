@@ -136,7 +136,7 @@ namespace GameData
 			}; // GameData::Config::Storage::IListener
 
 			Storage()
-			 :  m_mapValues(DefLessFunc(const CUtlSymbolLarge))
+			 :  m_mapValues(DefLessFunc(const K))
 			{
 			}
 
@@ -156,7 +156,7 @@ namespace GameData
 
 			public:
 				BaseListenerCollector()
-				 :  m_mapCallbacks(DefLessFunc(const CUtlSymbolLarge))
+				 :  m_mapCallbacks(DefLessFunc(const K))
 				{
 				}
 
