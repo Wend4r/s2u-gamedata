@@ -6,7 +6,8 @@
 	"title": "GameConfig",
 	"type": "object",
 
-	"$defs": {
+	"$defs":
+	{
 		"addressActionsSection":
 		{
 			"type": "object",
