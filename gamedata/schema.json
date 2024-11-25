@@ -132,6 +132,47 @@
 					}
 				},
 
+				"Offsets":
+				{
+					"description": "Offsets section",
+
+					"type": "object",
+
+					"patternProperties":
+					{
+						"^.*$":
+						{
+							"description": "A offset name",
+
+							"type": "object",
+
+							"properties":
+							{
+								"win64":
+								{
+									"description": "A offset number on Windows side",
+
+									"type": "string"
+								},
+
+								"linuxsteamrt64":
+								{
+									"description": "A offset number on Linux side",
+
+									"type": "string"
+								},
+
+								"osx64":
+								{
+									"description": "A offset number on macOS side",
+
+									"type": "string"
+								}
+							}
+						}
+					}
+				},
+
 				"Signatures":
 				{
 					"description": "Signatures section",
