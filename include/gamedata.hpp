@@ -346,15 +346,13 @@ namespace GameData
 				return map.Element(iFoundIndex);
 			}
 
-			const V &Get(const K &aKey) const
+			const V &Get(const K &aKey, const V &aDefaultValue = {}) const
 			{
 				auto &map = m_mapValues;
 
 				auto iFoundIndex = map.Find(aKey);
 
-				Assert(IS_VALID_GAMEDATA_INDEX(m_mapValues, iFoundIndex));
-
-				return map.Element(iFoundIndex);
+				return IS_VALID_GAMEDATA_INDEX(m_mapValues, iFoundIndex) ? map.Element(iFoundIndex) : aDefaultValue;
 			}
 
 			void TriggerCallbacks()
