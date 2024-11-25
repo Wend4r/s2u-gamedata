@@ -365,7 +365,7 @@ namespace GameData
 				}
 			}
 
-		protected:
+		public:
 			void Set(const K &aKey, const V &aValue)
 			{
 				auto &map = m_mapValues;
