@@ -42,6 +42,12 @@ class IServerGameDLL;
 using Platform = GameData::Platform;
 using Game = GameData::Game;
 
+static CKV3MemberName s_aGameMemberNames[Game::GAME_MAX] =
+{
+	CKV3MemberName("csgo"), // Game::GAME_CSGO
+	CKV3MemberName("dota"), // Game::GAME_DOTA
+};
+
 static CKV3MemberName s_aPlatformMemberNames[Platform::PLAT_MAX] =
 {
 	CKV3MemberName("windows"), // Platform::PLAT_WINDOWS
@@ -54,12 +60,7 @@ static CKV3MemberName s_aPlatformMemberNames[Platform::PLAT_MAX] =
 	CKV3MemberName("osx64"), // Platform::PLAT_MAC64
 };
 
-
-static CKV3MemberName s_aGameMemberNames[Game::GAME_MAX] =
-{
-	CKV3MemberName("csgo"), // Game::GAME_CSGO
-	CKV3MemberName("dota"), // Game::GAME_DOTA
-};
+static CKV3MemberName s_aSignatureMemberName = CKV3MemberName("signature");
 
 DLL_IMPORT IVEngineServer *engine;
 DLL_IMPORT IServerGameDLL *server;
@@ -413,10 +414,6 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 	KV3MemberId_t i = 0;
 
-	const auto aSignatureMemberName = CKV3MemberName("signature");
-
-	const char *pszSignatureKey = aSignatureMemberName.GetString();
-
 	CBufferStringVector vecSubMessages;
 
 	do
@@ -425,52 +422,11 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		const char *pszAddressName = pAddressesValues->GetMemberName(i);
 
-		KeyValues3 *pSignatureValues = pAddrSection->FindMember(aSignatureMemberName);
+		uintptr_t pAddrCur {};
 
-		if(!pSignatureValues)
+		if(!LoadEngineAddressActions(pRoot, pszAddressName, pAddrCur, pAddrSection, vecSubMessages))
 		{
-			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" key ", "at \"", pszAddressName, "\""};
-
-			vecMessages.AddToTail(pszMessageConcat);
-			i++;
-
-			continue;
-		}
-
-		const char *pszSignatureName = pSignatureValues->GetString();
-
-		const auto &pSigAddress = GetAddress(GetSymbol(pszSignatureName));
-
-		if(!pSigAddress)
-		{
-			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" signature ", "in \"", pszAddressName, "\""};
-
-			vecMessages.AddToTail(pszMessageConcat);
-			i++;
-
-			continue;
-		}
-
-		uintptr_t pAddrCur = pSigAddress.GetPtr();
-
-		// Remove an extra keys.
-		{
-			pAddrSection->RemoveMember(pSignatureValues);
-
-			int iCurrentPlat = GetCurrentPlatform();
-
-			for(int iPlat = PLAT_FIRST; iPlat < PLAT_MAX; iPlat++)
-			{
-				if(iCurrentPlat != iPlat)
-				{
-					pAddrSection->RemoveMember(GetPlatformMemberName((Platform)iPlat));
-				}
-			}
-		}
-
-		if(!LoadEngineAddressActions(pRoot, pAddrCur, pAddrSection, vecSubMessages))
-		{
-			const char *pszMessageConcat[] = {"Failed to ", "load ", "\"", pszSignatureKey, "\" address action:"};
+			const char *pszMessageConcat[] = {"Failed to ", "load ", "\"", pszAddressName, "\" address action:"};
 
 			vecMessages.AddToTail(pszMessageConcat);
 
@@ -497,7 +453,7 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 	return true;
 }
 
-bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CBufferStringVector &vecMessages)
+bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *pszAddressName, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CBufferStringVector &vecMessages)
 {
 	int iMemberCount = pActionsValues->GetMemberCount();
 
@@ -510,6 +466,52 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 		return false;
 	}
 
+	const auto &aSignatureMemberName = s_aSignatureMemberName;
+
+	const char *pszSignatureKey = aSignatureMemberName.GetString();
+
+	KeyValues3 *pSignatureValues = pActionsValues->FindMember(aSignatureMemberName);
+
+	if(pSignatureValues)
+	{
+		const char *pszSignatureName = pSignatureValues->GetString();
+
+		const auto &pSigAddress = GetAddress(GetSymbol(pszSignatureName));
+
+		if(!pSigAddress)
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszSignatureKey, "\" signature ", "in \"", pszAddressName, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+
+			return false;
+		}
+
+		pAddrCur = pSigAddress.GetPtr();
+
+		pActionsValues->RemoveMember(pSignatureValues);
+		iMemberCount--;
+	}
+
+	// Remove an extra keys.
+	{
+		int iCurrentPlat = GetCurrentPlatform();
+
+		for(int iPlat = PLAT_FIRST; iPlat < PLAT_MAX; iPlat++)
+		{
+			if(iCurrentPlat != iPlat)
+			{
+				pActionsValues->RemoveMember(GetPlatformMemberName((Platform)iPlat));
+				iMemberCount--;
+			}
+		}
+	}
+
+	if(!iMemberCount)
+	{
+		return true;
+	}
+
 	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
 
 	const char *pszPlatformKey = aPlatformMemberName.GetString();
@@ -518,48 +520,51 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, uintptr_t &pAd
 
 	do
 	{
-		KeyValues3 *pAction = pActionsValues->GetMember(i);
-
 		const char *pszName = pActionsValues->GetMemberName(i);
 
-		ptrdiff_t nActionValue = (ptrdiff_t)pAction->GetUInt64();
+		KeyValues3 *pAction = pActionsValues->GetMember(i);
 
-		if(!strcmp(pszName, "offset"))
+		if(!strcmp(pszPlatformKey, pszName))
 		{
-			pAddrCur += nActionValue;
+			return LoadEngineAddressActions(pRoot, pszAddressName, pAddrCur, pAction, vecMessages); // Recursive by platform.
 		}
-		else if(!strncmp(pszName, "read", 4))
+		else
 		{
-			if(!pszName[4])
+			ptrdiff_t nActionValue = static_cast<ptrdiff_t>(pAction->GetUInt64());
+
+			if(!strcmp(pszName, "offset"))
 			{
-				pAddrCur = *(uintptr_t *)(pAddrCur + nActionValue);
+				pAddrCur += nActionValue;
 			}
-			else if(!strcmp(&pszName[4], "_offs32"))
+			else if(!strncmp(pszName, "read", 4))
 			{
-				pAddrCur = pAddrCur + nActionValue + sizeof(int32_t) + *(int32_t *)(pAddrCur + nActionValue);
+				if(!pszName[4])
+				{
+					pAddrCur = *reinterpret_cast<uintptr_t *>(pAddrCur + nActionValue);
+				}
+				else if(!strcmp(&pszName[4], "_offs32"))
+				{
+					pAddrCur = pAddrCur + nActionValue + sizeof(int32_t) + *reinterpret_cast<int32_t *>(pAddrCur + nActionValue);
+				}
+				else
+				{
+					const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" read key"};
+
+					vecMessages.AddToTail(pszMessageConcat);
+					i++;
+
+					continue;
+				}
 			}
 			else
 			{
-				const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" read key"};
+				const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" key"};
 
 				vecMessages.AddToTail(pszMessageConcat);
 				i++;
 
 				continue;
 			}
-		}
-		else if(!strcmp(pszName, pszPlatformKey))
-		{
-			return LoadEngineAddressActions(pRoot, pAddrCur, pAction, vecMessages); // Recursive by platform.
-		}
-		else
-		{
-			const char *pszMessageConcat[] = {"Unknown \"", pszName, "\" key"};
-
-			vecMessages.AddToTail(pszMessageConcat);
-			i++;
-
-			continue;
 		}
 
 		i++;
