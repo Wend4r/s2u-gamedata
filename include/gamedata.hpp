@@ -451,6 +451,7 @@ namespace GameData
 
 	public:
 		Addresses &GetAddresses();
+		Keys &GetKeys();
 		Offsets &GetOffsets();
 
 	protected:

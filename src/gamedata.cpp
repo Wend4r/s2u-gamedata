@@ -148,12 +148,19 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 void GameData::Config::ClearValues()
 {
 	m_aAddressStorage.ClearValues();
+	m_aKeysStorage.ClearValues();
 	m_aOffsetStorage.ClearValues();
 }
 
 GameData::Config::Addresses &GameData::Config::GetAddresses()
 {
 	return m_aAddressStorage;
+}
+
+
+GameData::Config::Keys &GameData::Config::GetKeys()
+{
+	return m_aKeysStorage;
 }
 
 GameData::Config::Offsets &GameData::Config::GetOffsets()
@@ -507,7 +514,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 		}
 	}
 
-	if(!iMemberCount)
+	if(iMemberCount < 1)
 	{
 		return true;
 	}
