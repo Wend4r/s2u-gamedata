@@ -30,7 +30,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	)
 endif()
 
-set(c
+set(PLATFORM_LINK_OPTIONS
 	${PLATFORM_LINK_OPTIONS}
 )
 
