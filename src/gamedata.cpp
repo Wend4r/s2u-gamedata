@@ -507,8 +507,10 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 		{
 			if(iCurrentPlat != iPlat)
 			{
-				pActionsValues->RemoveMember(GetPlatformMemberName((Platform)iPlat));
-				iMemberCount--;
+				if(pActionsValues->RemoveMember(GetPlatformMemberName((Platform)iPlat)))
+				{
+					iMemberCount--;
+				}
 			}
 		}
 	}
