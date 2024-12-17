@@ -187,11 +187,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFoundIndex))
+					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = map.Element(iFound);
 
 						it = funcCallback;
 					}
@@ -205,13 +205,13 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFound = map.Find(aKey);
 
-					bool bResult = IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFoundIndex);
+					bool bResult = IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound);
 
 					if(bResult)
 					{
-						map.RemoveAt(iFoundIndex);
+						map.RemoveAt(iFound);
 					}
 
 					return bResult;
@@ -222,11 +222,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFoundIndex))
+					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = map.Element(iFound);
 
 						it(aKey, aValue);
 					}
@@ -250,11 +250,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFoundIndex))
+					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = map.Element(iFound);
 
 						it.AddVectorToTail(vecCallbacks);
 					}
@@ -272,11 +272,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFoundIndex))
+					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
 					{
-						auto &it = map.Element(iFoundIndex);
+						auto &it = map.Element(iFound);
 
 						it.AddToTail(funcCallback);
 					}
@@ -293,13 +293,13 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFound = map.Find(aKey);
 
-					bool bResult = IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFoundIndex);
+					bool bResult = IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound);
 
 					if(bResult)
 					{
-						map.RemoveAt(iFoundIndex);
+						map.RemoveAt(iFound);
 					}
 
 					return bResult;
@@ -310,11 +310,11 @@ namespace GameData
 				{
 					auto &map = m_mapCallbacks;
 
-					auto iFoundIndex = map.Find(aKey);
+					auto iFound = map.Find(aKey);
 
-					Assert(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFoundIndex));
+					Assert(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound));
 
-					auto &itVec = map.Element(iFoundIndex);
+					auto &itVec = map.Element(iFound);
 
 					FOR_EACH_VEC(itVec, i)
 					{
@@ -341,18 +341,18 @@ namespace GameData
 			{
 				auto &map = m_mapValues;
 
-				auto iFoundIndex = map.Find(aKey);
+				auto iFound = map.Find(aKey);
 
-				return map.Element(iFoundIndex);
+				return map.Element(iFound);
 			}
 
 			const V &Get(const K &aKey, const V &aDefaultValue = {}) const
 			{
 				auto &map = m_mapValues;
 
-				auto iFoundIndex = map.Find(aKey);
+				auto iFound = map.Find(aKey);
 
-				return IS_VALID_GAMEDATA_INDEX(m_mapValues, iFoundIndex) ? map.Element(iFoundIndex) : aDefaultValue;
+				return IS_VALID_GAMEDATA_INDEX(m_mapValues, iFound) ? map.Element(iFound) : aDefaultValue;
 			}
 
 			void TriggerCallbacks()
@@ -368,11 +368,11 @@ namespace GameData
 			{
 				auto &map = m_mapValues;
 
-				auto iFoundIndex = map.Find(aKey);
+				auto iFound = map.Find(aKey);
 
-				if(IS_VALID_GAMEDATA_INDEX(m_mapValues, iFoundIndex))
+				if(IS_VALID_GAMEDATA_INDEX(m_mapValues, iFound))
 				{
-					auto &it = map.Element(iFoundIndex);
+					auto &it = map.Element(iFound);
 
 					it = aValue;
 				}
@@ -405,9 +405,9 @@ namespace GameData
 			{
 				auto &vec = m_vecListeners;
 
-				const auto iInvalidIndex = INVALID_GAMEDATA_INDEX(m_vecListeners);
+				const auto iInvalid = INVALID_GAMEDATA_INDEX(m_vecListeners);
 
-				auto iFoundIndex = iInvalidIndex;
+				auto iFound = iInvalid;
 
 				FOR_EACH_VEC(vec, i)
 				{
@@ -415,17 +415,17 @@ namespace GameData
 
 					if(it == pListener)
 					{
-						iFoundIndex = i;
+						iFound = i;
 
 						break;
 					}
 				}
 
-				bool bResult = iFoundIndex != iInvalidIndex;
+				bool bResult = iFound != iInvalid;
 
 				if(bResult)
 				{
-					vec.FastRemove(iFoundIndex);
+					vec.FastRemove(iFound);
 				}
 
 				return bResult;
