@@ -189,7 +189,7 @@ namespace GameData
 
 					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
+					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
 					{
 						auto &it = map.Element(iFound);
 
@@ -207,7 +207,7 @@ namespace GameData
 
 					auto iFound = map.Find(aKey);
 
-					bool bResult = IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound);
+					bool bResult = IS_VALID_GAMEDATA_INDEX(map, iFound);
 
 					if(bResult)
 					{
@@ -224,7 +224,7 @@ namespace GameData
 
 					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
+					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
 					{
 						auto &it = map.Element(iFound);
 
@@ -252,7 +252,7 @@ namespace GameData
 
 					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
+					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
 					{
 						auto &it = map.Element(iFound);
 
@@ -274,7 +274,7 @@ namespace GameData
 
 					auto iFound = map.Find(aKey);
 
-					if(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound))
+					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
 					{
 						auto &it = map.Element(iFound);
 
@@ -295,7 +295,7 @@ namespace GameData
 
 					auto iFound = map.Find(aKey);
 
-					bool bResult = IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound);
+					bool bResult = IS_VALID_GAMEDATA_INDEX(map, iFound);
 
 					if(bResult)
 					{
@@ -312,7 +312,7 @@ namespace GameData
 
 					auto iFound = map.Find(aKey);
 
-					Assert(IS_VALID_GAMEDATA_INDEX(m_mapCallbacks, iFound));
+					Assert(IS_VALID_GAMEDATA_INDEX(map, iFound));
 
 					auto &itVec = map.Element(iFound);
 
