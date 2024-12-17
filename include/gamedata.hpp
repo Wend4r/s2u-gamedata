@@ -150,27 +150,22 @@ namespace GameData
 			using OnCollectorChangedCallback_t = std::function<void (const K &, const V &)>;
 			using OnCollectorChangedCallbackShared_t = std::shared_ptr<OnCollectorChangedCallback_t>;
 
-			class MakeCollectorChangedCallback
+			class CollectorChangedSharedCallback
 			{
 			public:
-				MakeCollectorChangedCallback()
+				CollectorChangedSharedCallback()
 				 :  m_pCallback(std::make_shared<OnCollectorChangedCallback_t>(nullptr))
 				{
 				}
 
-				MakeCollectorChangedCallback(const OnCollectorChangedCallback_t &funcCallback)
-				 :  m_pCallback(std::make_shared<OnCollectorChangedCallback_t>(funcCallback))
-				{
-				}
-
-				MakeCollectorChangedCallback(const OnCollectorChangedCallbackShared_t &funcSharedCallback)
+				CollectorChangedSharedCallback(const OnCollectorChangedCallbackShared_t &funcSharedCallback)
 				 :  m_pCallback(funcSharedCallback)
 				{
 				}
 
-				operator OnCollectorChangedCallback_t() const
+				CollectorChangedSharedCallback(const OnCollectorChangedCallback_t &funcCallback)
+				 :  m_pCallback(std::make_shared<OnCollectorChangedCallback_t>(funcCallback))
 				{
-					return *m_pCallback;
 				}
 
 				operator OnCollectorChangedCallbackShared_t() const
@@ -178,9 +173,14 @@ namespace GameData
 					return m_pCallback;
 				}
 
+				operator OnCollectorChangedCallback_t() const
+				{
+					return *m_pCallback;
+				}
+
 			private:
 				OnCollectorChangedCallbackShared_t m_pCallback;
-			}; // GameData::Config::Storage::MakeCollectorChangedCallback
+			}; // GameData::Config::Storage::CollectorChangedSharedCallback
 
 			template<typename T>
 			class BaseListenerCollector : public IListener
@@ -195,7 +195,7 @@ namespace GameData
 				}
 
 			public:
-				virtual void Insert(const K &aKey, const MakeCollectorChangedCallback &funcCallback) = 0;
+				virtual void Insert(const K &aKey, const CollectorChangedSharedCallback &funcCallback) = 0;
 				virtual bool Remove(const K &aKey) = 0;
 
 				virtual void RemoveAll()
@@ -207,17 +207,17 @@ namespace GameData
 				CUtlMap<K, T> m_mapCallbacks;
 			}; // GameData::Config::Storage::BaseListenerCollector
 
-			class ListenerCallbacksCollector : public BaseListenerCollector<MakeCollectorChangedCallback>
+			class ListenerCallbacksCollector : public BaseListenerCollector<CollectorChangedSharedCallback>
 			{
 			private:
-				using Base = BaseListenerCollector<MakeCollectorChangedCallback>;
+				using Base = BaseListenerCollector<CollectorChangedSharedCallback>;
 				using Base::m_mapCallbacks;
 
 			public:
 				ListenerCallbacksCollector() = default;
 
 			public: // BaseListenerCollector<>
-				void Insert(const K &aKey, const MakeCollectorChangedCallback &funcCallback) override
+				void Insert(const K &aKey, const CollectorChangedSharedCallback &funcCallback) override
 				{
 					m_mapCallbacks.InsertOrReplace(aKey, funcCallback);
 				}
@@ -254,7 +254,7 @@ namespace GameData
 				}
 			}; // GameData::Config::Storage::ListenerCallbacksCollector
 
-			using ListenerMultipleCallbacksCollectorVector = CUtlVector<MakeCollectorChangedCallback>;
+			using ListenerMultipleCallbacksCollectorVector = CUtlVector<CollectorChangedSharedCallback>;
 
 			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<ListenerMultipleCallbacksCollectorVector>
 			{
