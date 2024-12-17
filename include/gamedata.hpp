@@ -220,8 +220,6 @@ namespace GameData
 				void Insert(const K &aKey, const MakeCollectorChangedCallback &funcCallback) override
 				{
 					m_mapCallbacks.InsertOrReplace(aKey, funcCallback);
-
-					DebuggerBreak();
 				}
 
 				bool Remove(const K &aKey) override
