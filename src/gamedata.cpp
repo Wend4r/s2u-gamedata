@@ -157,7 +157,6 @@ GameData::Config::Addresses &GameData::Config::GetAddresses()
 	return m_aAddressStorage;
 }
 
-
 GameData::Config::Keys &GameData::Config::GetKeys()
 {
 	return m_aKeysStorage;

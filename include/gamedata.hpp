@@ -33,6 +33,7 @@
 #include <stddef.h>
 
 #include <functional>
+#include <memory>
 
 #include <tier0/platform.h>
 
@@ -146,7 +147,40 @@ namespace GameData
 			}
 
 		public:
-			using OnCollectorChangedCallback = std::function<void (const K &, const V &)>;
+			using OnCollectorChangedCallback_t = std::function<void (const K &, const V &)>;
+			using OnCollectorChangedCallbackShared_t = std::shared_ptr<OnCollectorChangedCallback_t>;
+
+			class MakeCollectorChangedCallback
+			{
+			public:
+				MakeCollectorChangedCallback()
+				 :  m_pCallback(std::make_shared<OnCollectorChangedCallback_t>(nullptr))
+				{
+				}
+
+				MakeCollectorChangedCallback(const OnCollectorChangedCallback_t &funcCallback)
+				 :  m_pCallback(std::make_shared<OnCollectorChangedCallback_t>(funcCallback))
+				{
+				}
+
+				MakeCollectorChangedCallback(const OnCollectorChangedCallbackShared_t &funcSharedCallback)
+				 :  m_pCallback(funcSharedCallback)
+				{
+				}
+
+				operator OnCollectorChangedCallback_t() const
+				{
+					return *m_pCallback;
+				}
+
+				operator OnCollectorChangedCallbackShared_t() const
+				{
+					return m_pCallback;
+				}
+
+			private:
+				OnCollectorChangedCallbackShared_t m_pCallback;
+			}; // GameData::Config::Storage::MakeCollectorChangedCallback
 
 			template<typename T>
 			class BaseListenerCollector : public IListener
@@ -161,7 +195,7 @@ namespace GameData
 				}
 
 			public:
-				virtual void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) = 0;
+				virtual void Insert(const K &aKey, const MakeCollectorChangedCallback &funcCallback) = 0;
 				virtual bool Remove(const K &aKey) = 0;
 
 				virtual void RemoveAll()
@@ -173,32 +207,21 @@ namespace GameData
 				CUtlMap<K, T> m_mapCallbacks;
 			}; // GameData::Config::Storage::BaseListenerCollector
 
-			class ListenerCallbacksCollector : public BaseListenerCollector<OnCollectorChangedCallback>
+			class ListenerCallbacksCollector : public BaseListenerCollector<MakeCollectorChangedCallback>
 			{
 			private:
-				using Base = BaseListenerCollector<OnCollectorChangedCallback>;
+				using Base = BaseListenerCollector<MakeCollectorChangedCallback>;
 				using Base::m_mapCallbacks;
 
 			public:
 				ListenerCallbacksCollector() = default;
 
 			public: // BaseListenerCollector<>
-				void Insert(const K &aKey, const OnCollectorChangedCallback &funcCallback) override
+				void Insert(const K &aKey, const MakeCollectorChangedCallback &funcCallback) override
 				{
-					auto &map = m_mapCallbacks;
+					m_mapCallbacks.InsertOrReplace(aKey, funcCallback);
 
-					auto iFound = map.Find(aKey);
-
-					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
-					{
-						auto &it = map.Element(iFound);
-
-						it = funcCallback;
-					}
-					else
-					{
-						map.Insert(aKey, funcCallback);
-					}
+					DebuggerBreak();
 				}
 
 				bool Remove(const K &aKey) override
@@ -226,14 +249,14 @@ namespace GameData
 
 					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
 					{
-						auto &it = map.Element(iFound);
+						OnCollectorChangedCallback_t it = map.Element(iFound);
 
 						it(aKey, aValue);
 					}
 				}
 			}; // GameData::Config::Storage::ListenerCallbacksCollector
 
-			using ListenerMultipleCallbacksCollectorVector = CUtlVector<OnCollectorChangedCallback>;
+			using ListenerMultipleCallbacksCollectorVector = CUtlVector<MakeCollectorChangedCallback>;
 
 			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<ListenerMultipleCallbacksCollectorVector>
 			{
@@ -268,7 +291,7 @@ namespace GameData
 				}
 
 			public: // BaseListenerCollector<>
-				void Insert(K aKey, const OnCollectorChangedCallback &funcCallback) override
+				void Insert(K aKey, const ListenerCallbacksCollector &funcCallback) override
 				{
 					auto &map = m_mapCallbacks;
 
@@ -318,7 +341,7 @@ namespace GameData
 
 					FOR_EACH_VEC(itVec, i)
 					{
-						auto &it = itVec[i];
+						OnCollectorChangedCallback_t it = itVec[i];
 
 						it(aKey, aValue);
 					}
