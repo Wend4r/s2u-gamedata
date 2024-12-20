@@ -60,7 +60,8 @@ static CKV3MemberName s_aPlatformMemberNames[Platform::PLAT_MAX] =
 	CKV3MemberName("osx64"), // Platform::PLAT_MAC64
 };
 
-static CKV3MemberName s_aSignatureMemberName = CKV3MemberName("signature");
+static CKV3MemberName s_aLibraryMemberName = CKV3MemberName("library"), 
+                      s_aSignatureMemberName = CKV3MemberName("signature");
 
 DLL_IMPORT IVEngineServer *engine;
 DLL_IMPORT IServerGameDLL *server;
@@ -238,11 +239,11 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 	KV3MemberId_t i = 0;
 
-	const auto aLibraryMemberName = CKV3MemberName("library");
+	const auto &aLibraryMemberName = s_aLibraryMemberName;
 
 	const char *pszLibraryKey = aLibraryMemberName.GetString();
 
-	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+	const auto &aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
 
 	const char *pszPlatformKey = aPlatformMemberName.GetString();
 
@@ -328,7 +329,7 @@ bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues,
 
 	KV3MemberId_t i = 0;
 
-	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+	const auto &aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
 
 	const char *pszPlatformKey = aPlatformMemberName.GetString();
 
@@ -374,7 +375,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 
 	KV3MemberId_t i = 0;
 
-	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+	const auto &aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
 
 	const char *pszPlatformKey = aPlatformMemberName.GetString();
 
@@ -520,7 +521,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 		return true;
 	}
 
-	const auto aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
+	const auto &aPlatformMemberName = GameData::GetCurrentPlatformMemberName();
 
 	const char *pszPlatformKey = aPlatformMemberName.GetString();
 
