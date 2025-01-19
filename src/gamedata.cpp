@@ -226,9 +226,9 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 
 bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages)
 {
-	int iMemberCount = pSignaturesValues->GetMemberCount();
+	int nMemberCount = pSignaturesValues->GetMemberCount();
 
-	if(!iMemberCount)
+	if(!nMemberCount)
 	{
 		static const char *s_pszMessageConcat[] = {"Section is empty"};
 
@@ -309,16 +309,16 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		i++;
 	}
-	while(i < iMemberCount);
+	while(i < nMemberCount);
 
 	return true;
 }
 
 bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues, CBufferStringVector &vecMessages)
 {
-	int iMemberCount = pKeysValues->GetMemberCount();
+	int nMemberCount = pKeysValues->GetMemberCount();
 
-	if(!iMemberCount)
+	if(!nMemberCount)
 	{
 		static const char *s_pszMessageConcat[] = {"Keys section is empty"};
 
@@ -355,16 +355,16 @@ bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues,
 
 		i++;
 	}
-	while(i < iMemberCount);
+	while(i < nMemberCount);
 
 	return true;
 }
 
 bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages)
 {
-	int iMemberCount = pOffsetsValues->GetMemberCount();
+	int nMemberCount = pOffsetsValues->GetMemberCount();
 
-	if(!iMemberCount)
+	if(!nMemberCount)
 	{
 		static const char *s_pszMessageConcat[] = {"Offsets section is empty"};
 
@@ -401,16 +401,16 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 
 		i++;
 	}
-	while(i < iMemberCount);
+	while(i < nMemberCount);
 
 	return true;
 }
 
 bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferStringVector &vecMessages)
 {
-	int iMemberCount = pAddressesValues->GetMemberCount();
+	int nMemberCount = pAddressesValues->GetMemberCount();
 
-	if(!iMemberCount)
+	if(!nMemberCount)
 	{
 		const char *s_pszMessageConcat[] = {"Section is empty"};
 
@@ -455,16 +455,16 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 		i++;
 	}
-	while(i < iMemberCount);
+	while(i < nMemberCount);
 
 	return true;
 }
 
 bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *pszAddressName, uintptr_t &pAddrCur, KeyValues3 *pActionsValues, CBufferStringVector &vecMessages)
 {
-	int iMemberCount = pActionsValues->GetMemberCount();
+	int nMemberCount = pActionsValues->GetMemberCount();
 
-	if(!iMemberCount)
+	if(!nMemberCount)
 	{
 		static const char *s_pszMessageConcat[] = {"Section is empty"};
 
@@ -497,7 +497,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 		pAddrCur = pSigAddress.GetPtr();
 
 		pActionsValues->RemoveMember(pSignatureValues);
-		iMemberCount--;
+		nMemberCount--;
 	}
 
 	// Remove an extra keys.
@@ -510,13 +510,13 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 			{
 				if(pActionsValues->RemoveMember(GetPlatformMemberName((Platform)iPlat)))
 				{
-					iMemberCount--;
+					nMemberCount--;
 				}
 			}
 		}
 	}
 
-	if(iMemberCount < 1)
+	if(nMemberCount < 1)
 	{
 		return true;
 	}
@@ -578,7 +578,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 
 		i++;
 	}
-	while(i < iMemberCount);
+	while(i < nMemberCount);
 
 	return true;
 }
