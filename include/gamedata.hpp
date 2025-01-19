@@ -51,6 +51,26 @@
 #	define IS_VALID_GAMEDATA_INDEX(map, i) \
 	(map.IsValidIndex(i))
 
+#	define GAMEDATA_ADDRESS_LAMBDA_CAPTURE(fieldAddressVar) \
+	[&_address = fieldAddressVar](const CUtlSymbolLarge &aKey, const DynLibUtils::CMemory &aAddress) \
+	{ \
+		_address = aAddress.RCast<decltype(fieldAddressVar)>(); \
+	}
+#	define GAMEDATA_KEY_LAMBDA_CAPTURE(fieldKeyVar) \
+	[&_key = fieldKeyVar](const CUtlSymbolLarge &aKey, const CUtlString &sKey) \
+	{ \
+		_key = sKey; \
+	}
+#	define GAMEDATA_OFFSET_LAMBDA_CAPTURE(fieldOffsetVar) \
+	[&_offset = fieldOffsetVar](const CUtlSymbolLarge &aKey, const ptrdiff_t &nOffset) \
+	{ \
+		_offset = nOffset; \
+	}
+
+#	define GAMEDATA_ADDRESS_SHARED_LAMBDA_CAPTURE(fieldAddressVar) {GAMEDATA_ADDRESS_LAMBDA_CAPTURE(fieldAddressVar)}
+#	define GAMEDATA_KEY_SHARED_LAMBDA_CAPTURE(fieldKeyVar) {GAMEDATA_KEY_LAMBDA_CAPTURE(fieldKeyVar)}
+#	define GAMEDATA_OFFSET_SHARED_LAMBDA_CAPTURE(fieldOffsetVar) {GAMEDATA_OFFSET_LAMBDA_CAPTURE(fieldOffsetVar)}
+
 class KeyValues3;
 
 class IGameData
