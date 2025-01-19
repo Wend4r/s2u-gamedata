@@ -20,35 +20,35 @@
  */
 
 #ifndef _INCLUDE_GAMEDATA_HPP_
-#define _INCLUDE_GAMEDATA_HPP_
+#	define _INCLUDE_GAMEDATA_HPP_
 
-#define MAX_GAMEDATA_SECTION_MESSAGE_LENGTH 256
-#define MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH MAX_GAMEDATA_SECTION_MESSAGE_LENGTH
-#define MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
-#define MAX_GAMEDATA_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
+#	define MAX_GAMEDATA_SECTION_MESSAGE_LENGTH 256
+#	define MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH MAX_GAMEDATA_SECTION_MESSAGE_LENGTH
+#	define MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
+#	define MAX_GAMEDATA_MESSAGE_LENGTH (MAX_GAMEDATA_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_SECTION_MESSAGE_LENGTH + MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH)
 
-#include <dynlibutils/module.hpp>
-#include <dynlibutils/memaddr.hpp>
+#	include <dynlibutils/module.hpp>
+#	include <dynlibutils/memaddr.hpp>
 
-#include <stddef.h>
+#	include <stddef.h>
 
-#include <functional>
-#include <memory>
+#	include <functional>
+#	include <memory>
 
-#include <tier0/platform.h>
+#	include <tier0/platform.h>
 
-#include <tier0/bufferstring.h>
-#include <tier0/dbg.h>
-#include <tier1/utlsymbollarge.h>
-#include <tier1/utlmap.h>
-#include <tier1/utlrbtree.h>
-#include <tier1/utlvector.h>
-#include <tier1/keyvalues3.h>
+#	include <tier0/bufferstring.h>
+#	include <tier0/dbg.h>
+#	include <tier1/utlsymbollarge.h>
+#	include <tier1/utlmap.h>
+#	include <tier1/utlrbtree.h>
+#	include <tier1/utlvector.h>
+#	include <tier1/keyvalues3.h>
 
-#define INVALID_GAMEDATA_INDEX(map) \
+#	define INVALID_GAMEDATA_INDEX(map) \
 	decltype(map)::InvalidIndex()
 
-#define IS_VALID_GAMEDATA_INDEX(map, i) \
+#	define IS_VALID_GAMEDATA_INDEX(map, i) \
 	(map.IsValidIndex(i))
 
 class KeyValues3;
