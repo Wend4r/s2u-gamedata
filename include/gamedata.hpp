@@ -61,7 +61,7 @@ public:
 
 namespace GameData
 {
-	using CBufferStringSection = CBufferStringGrowable<MAX_GAMEDATA_SECTION_MESSAGE_LENGTH>;
+	using CBufferStringSection = CBufferStringN<MAX_GAMEDATA_SECTION_MESSAGE_LENGTH>;
 
 	class CBufferStringConcat : public CBufferStringSection
 	{
