@@ -507,18 +507,47 @@ namespace GameData
 		bool LoadEngineAddressActions(IGameData *pRoot, const char *pszAddressSection, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
 
 	public:
-		CUtlSymbolLarge GetSymbol(const char *pszText);
-		CUtlSymbolLarge FindSymbol(const char *pszText) const;
+		CUtlSymbolLarge GetSymbol(const char *pszText)
+		{
+			return m_aSymbolTable.AddString(pszText);
+		}
+
+		CUtlSymbolLarge FindSymbol(const char *pszText) const
+		{
+			return m_aSymbolTable.Find(pszText);
+		}
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const;
-		const CUtlString &GetKey(const CUtlSymbolLarge &sName) const;
-		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const;
+		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const
+		{
+			return m_aAddressStorage.Get(sName);
+		}
+
+		const CUtlString &GetKey(const CUtlSymbolLarge &sName) const
+		{
+			return m_aKeysStorage.Get(sName);
+		}
+
+		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const
+		{
+			return m_aOffsetStorage.Get(sName);
+		}
 
 	protected:
-		void SetAddress(const CUtlSymbolLarge &sName, const DynLibUtils::CMemory &aMemory);
-		void SetKey(const CUtlSymbolLarge &sName, const CUtlString &sValue);
-		void SetOffset(const CUtlSymbolLarge &sName, const ptrdiff_t &nValue);
+		void SetAddress(const CUtlSymbolLarge &sName, const DynLibUtils::CMemory &aMemory)
+		{
+			m_aAddressStorage.Set(sName, aMemory);
+		}
+
+		void SetKey(const CUtlSymbolLarge &sName, const CUtlString &sValue)
+		{
+			m_aKeysStorage.Set(sName, sValue);
+		}
+
+		void SetOffset(const CUtlSymbolLarge &sName, const ptrdiff_t &nValue)
+		{
+			m_aOffsetStorage.Set(sName, nValue);
+		}
 
 	private:
 		CUtlSymbolTableLarge_CI m_aSymbolTable;
