@@ -491,9 +491,20 @@ namespace GameData
 		void ClearValues();
 
 	public:
-		Addresses &GetAddresses();
-		Keys &GetKeys();
-		Offsets &GetOffsets();
+		Addresses &GetAddresses()
+		{
+			return m_aAddressStorage;
+		}
+
+		Keys &GetKeys()
+		{
+			return m_aKeysStorage;
+		}
+
+		Offsets &GetOffsets()
+		{
+			return m_aOffsetStorage;
+		}
 
 	protected:
 		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);

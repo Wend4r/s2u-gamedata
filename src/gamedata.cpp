@@ -153,21 +153,6 @@ void GameData::Config::ClearValues()
 	m_aOffsetStorage.ClearValues();
 }
 
-GameData::Config::Addresses &GameData::Config::GetAddresses()
-{
-	return m_aAddressStorage;
-}
-
-GameData::Config::Keys &GameData::Config::GetKeys()
-{
-	return m_aKeysStorage;
-}
-
-GameData::Config::Offsets &GameData::Config::GetOffsets()
-{
-	return m_aOffsetStorage;
-}
-
 bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages)
 {
 	struct
