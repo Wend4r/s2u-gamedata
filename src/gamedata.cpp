@@ -278,11 +278,11 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		const char *pszSignature = pPlatformValues->GetString();
 
-		const auto pSigResult = pLibModule->FindPattern(pszSignature);
+		const auto pSigResult = pLibModule->FindPattern(DynLibUtils::ParsePattern(pszSignature)); // Hot!
 
 		if(!pSigResult)
 		{
-			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszSigName, "\""};
+			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszSigName, "\" by", "\"", pszSignature, "\" signature" };
 
 			vecMessages.AddToTail(pszMessageConcat);
 			i++;
@@ -479,7 +479,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 			return false;
 		}
 
-		pAddrCur = pSigAddress.GetPtr();
+		pAddrCur = pSigAddress.GetAddr();
 
 		pActionsValues->RemoveMember(pSignatureValues);
 		nMemberCount--;
