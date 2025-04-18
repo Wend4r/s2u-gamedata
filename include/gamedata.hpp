@@ -81,29 +81,7 @@ public:
 
 namespace GameData
 {
-	using CBufferStringSection = CBufferStringN<MAX_GAMEDATA_SECTION_MESSAGE_LENGTH>;
-
-	class CBufferStringConcat : public CBufferStringSection
-	{
-	public:
-		using Base = CBufferStringSection;
-		using Base::Base;
-
-		template<uintp N>
-		CBufferStringConcat(const char *(&pszSplit)[N])
-		{
-			AppendConcat(N, pszSplit, NULL);
-		}
-
-		template<uintp N>
-		CBufferStringConcat(const char *pszStartWtih, const char *(&pszSplit)[N])
-		{
-			Insert(0, pszStartWtih);
-			AppendConcat(N, pszSplit, NULL);
-		}
-	}; // GameData::CBufferStringConcat
-
-	using CBufferStringVector = CUtlVector<CBufferStringConcat>;
+	using CBufferStringVector = CUtlVector<CBufferString>;
 
 	static const CKV3MemberName &GetSourceEngineMemberName();
 
