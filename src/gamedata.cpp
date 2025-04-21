@@ -138,7 +138,7 @@ bool GameData::Config::Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferSt
 	{
 		const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszEngineKey, "\" section"};
 
-		vecMessages.AddToTail({pszMessageConcat});
+		vecMessages.AddToTail(pszMessageConcat);
 
 		return false;
 	}
