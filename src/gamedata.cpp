@@ -39,25 +39,25 @@ class IFileSystem;
 class IServerGameDLL;
 #endif
 
-using Platform = GameData::Platform;
-using Game = GameData::Game;
+using Platform_t = GameData::Platform_t;
+using Game_t = GameData::Game_t;
 
-static CKV3MemberName s_aGameMemberNames[Game::GAME_MAX] =
+static CKV3MemberName s_aGameMemberNames[Game_t::GAME_MAX] =
 {
-	CKV3MemberName("csgo"), // Game::GAME_CSGO
-	CKV3MemberName("dota"), // Game::GAME_DOTA
+	CKV3MemberName("csgo"), // Game_t::GAME_CSGO
+	CKV3MemberName("dota"), // Game_t::GAME_DOTA
 };
 
-static CKV3MemberName s_aPlatformMemberNames[Platform::PLAT_MAX] =
+static CKV3MemberName s_aPlatformMemberNames[Platform_t::PLAT_MAX] =
 {
-	CKV3MemberName("windows"), // Platform::PLAT_WINDOWS
-	CKV3MemberName("win64"), // Platform::PLAT_WINDOWS64
+	CKV3MemberName("windows"), // Platform_t::PLAT_WINDOWS
+	CKV3MemberName("win64"), // Platform_t::PLAT_WINDOWS64
 
-	CKV3MemberName("linux"), // Platform::PLAT_LINUX
-	CKV3MemberName("linuxsteamrt64"), // Platform::PLAT_LINUX64
+	CKV3MemberName("linux"), // Platform_t::PLAT_LINUX
+	CKV3MemberName("linuxsteamrt64"), // Platform_t::PLAT_LINUX64
 
-	CKV3MemberName("mac"), // Platform::PLAT_MAC
-	CKV3MemberName("osx64"), // Platform::PLAT_MAC64
+	CKV3MemberName("mac"), // Platform_t::PLAT_MAC
+	CKV3MemberName("osx64"), // Platform_t::PLAT_MAC64
 };
 
 static CKV3MemberName s_aLibraryMemberName = CKV3MemberName("library"), 
@@ -78,29 +78,29 @@ const CKV3MemberName &GameData::GetSourceEngineMemberName()
 #endif
 }
 
-GameData::Platform GameData::GetCurrentPlatform()
+GameData::Platform_t GameData::GetCurrentPlatform()
 {
-#if defined(_WINDOWS)
+#if defined(PLATFORM_WINDOWS)
 #	if defined(X64BITS)
-	return Platform::PLAT_WINDOWS64;
+	return Platform_t::PLAT_WINDOWS64;
 #	else
-	return Platform::PLAT_WINDOWS;
+	return Platform_t::PLAT_WINDOWS;
 #	endif
-#elif defined(_LINUX)
+#elif defined(PLATFORM_LINUX)
 #	if defined(X64BITS)
-	return Platform::PLAT_LINUX64;
+	return Platform_t::PLAT_LINUX64;
 #	else
-	return Platform::PLAT_LINUX;
+	return Platform_t::PLAT_LINUX;
 #	endif
-#elif defined(_OSX)
+#elif defined(PLATFORM_OSX)
 #	if defined(X64BITS)
-	return Platform::PLAT_MAC64;
+	return Platform_t::PLAT_MAC64;
 #	else
-	return Platform::PLAT_MAC;
+	return Platform_t::PLAT_MAC;
 #	endif
 #else
 #	error Unsupported platform
-	return Platform::PLAT_UNKNOWN;
+	return Platform_t::PLAT_UNKNOWN;
 #endif
 }
 
@@ -109,7 +109,7 @@ const CKV3MemberName &GameData::GetCurrentPlatformMemberName()
 	return GetPlatformMemberName(GetCurrentPlatform());
 }
 
-const CKV3MemberName &GameData::GetPlatformMemberName(Platform eElm)
+const CKV3MemberName &GameData::GetPlatformMemberName(Platform_t eElm)
 {
 	return s_aPlatformMemberNames[eElm];
 }
@@ -382,7 +382,7 @@ bool GameData::Config::LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsV
 			continue;
 		}
 
-		SetOffset(GetSymbol(pszOffsetName), pPlatformValues->GetType() == KV3_TYPE_STRING ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
+		SetOffset(GetSymbol(pszOffsetName), pPlatformValues->IsString() ? GameData::ReadOffset(pPlatformValues->GetString()) : pPlatformValues->GetUInt64());
 
 		i++;
 	}
@@ -493,7 +493,7 @@ bool GameData::Config::LoadEngineAddressActions(IGameData *pRoot, const char *ps
 		{
 			if(iCurrentPlat != iPlat)
 			{
-				if(pActionsValues->RemoveMember(GetPlatformMemberName((Platform)iPlat)))
+				if(pActionsValues->RemoveMember(GetPlatformMemberName((Platform_t)iPlat)))
 				{
 					nMemberCount--;
 				}

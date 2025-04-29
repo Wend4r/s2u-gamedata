@@ -85,7 +85,7 @@ namespace GameData
 
 	static const CKV3MemberName &GetSourceEngineMemberName();
 
-	enum Platform : int
+	enum Platform_t : int
 	{
 		PLAT_UNKNOWN = -1,
 		PLAT_FIRST = 0,
@@ -100,9 +100,9 @@ namespace GameData
 		PLAT_MAC64,
 
 		PLAT_MAX
-	}; // GameData::Platform
+	}; // GameData::Platform_t
 
-	enum Game : int
+	enum Game_t : int
 	{
 		GAME_UNKNOWN = -1,
 		GAME_FIRST = 0,
@@ -111,11 +111,11 @@ namespace GameData
 		GAME_DOTA,
 
 		GAME_MAX
-	}; // GameData::Game
+	}; // GameData::Game_t
 
-	inline static Platform GetCurrentPlatform();
+	inline static Platform_t GetCurrentPlatform();
 	inline static const CKV3MemberName &GetCurrentPlatformMemberName();
-	inline static const CKV3MemberName &GetPlatformMemberName(Platform eElm);
+	inline static const CKV3MemberName &GetPlatformMemberName(Platform_t eElm);
 
 	static ptrdiff_t ReadOffset(const char *pszValue);
 
