@@ -104,14 +104,14 @@ GameData::Platform_t GameData::GetCurrentPlatform()
 #endif
 }
 
-const CKV3MemberName &GameData::GetCurrentPlatformMemberName()
-{
-	return GetPlatformMemberName(GetCurrentPlatform());
-}
-
 const CKV3MemberName &GameData::GetPlatformMemberName(Platform_t eElm)
 {
 	return s_aPlatformMemberNames[eElm];
+}
+
+const CKV3MemberName &GameData::GetCurrentPlatformMemberName()
+{
+	return GetPlatformMemberName(GetCurrentPlatform());
 }
 
 ptrdiff_t GameData::ReadOffset(const char *pszValue)
@@ -119,10 +119,11 @@ ptrdiff_t GameData::ReadOffset(const char *pszValue)
 	return static_cast<ptrdiff_t>(strtol(pszValue, NULL, 0));
 }
 
-GameData::Config::Config(const Addresses &aAddressStorage, const Keys &aKeysStorage, const Offsets &aOffsetsStorage)
- :  m_aAddressStorage(aAddressStorage), 
-    m_aKeysStorage(aKeysStorage), 
-    m_aOffsetStorage(aOffsetsStorage)
+GameData::Config::Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses &&aAddressStorage, Keys &&aKeysStorage, Offsets &&aOffsetsStorage)
+ :  m_aSymbolTable(Move(aSymbolTable)),
+    m_aAddressStorage(Move(aAddressStorage)), 
+    m_aKeysStorage(Move(aKeysStorage)), 
+    m_aOffsetStorage(Move(aOffsetsStorage))
 {
 }
 
@@ -195,10 +196,8 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 
 			vecMessages.AddToTail(pszMessageConcat);
 
-			FOR_EACH_VEC(vecSubMessages, i)
+			for(const auto &it : vecSubMessages)
 			{
-				const auto &it = vecSubMessages[i];
-
 				const char *pszSubMessageConcat[] = {"\t", it.Get()};
 
 				vecMessages.AddToTail(pszSubMessageConcat);
@@ -215,9 +214,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 	if(!nMemberCount)
 	{
-		static const char *s_pszMessageConcat[] = {"Section is empty"};
-
-		vecMessages.AddToTail(s_pszMessageConcat);
+		vecMessages.AddToTail("Section is empty");
 
 		return false;
 	}
@@ -422,10 +419,8 @@ bool GameData::Config::LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddres
 
 			vecMessages.AddToTail(pszMessageConcat);
 
-			FOR_EACH_VEC(vecSubMessages, i)
+			for(const auto &it : vecSubMessages)
 			{
-				const auto &it = vecSubMessages[i];
-
 				const char *pszSubMessageConcat[] = {"\t", it.Get()};
 
 				vecMessages.AddToTail(pszSubMessageConcat);

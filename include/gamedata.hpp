@@ -28,7 +28,6 @@
 #	include <stddef.h>
 
 #	include <functional>
-#	include <memory>
 
 #	include <tier0/platform.h>
 
@@ -134,110 +133,24 @@ namespace GameData
 				virtual void OnChanged(const K &aKey, const V &aValue) = 0;
 			}; // GameData::Config::Storage::IListener
 
-			Storage()
-			 :  m_mapValues(DefLessFunc(const K))
-			{
-			}
-
-			explicit Storage(IListener *pFirstListener)
+			Storage() : m_mapValues(DefLessFunc(const K)) {}
+			explicit Storage(IListener *pFirstListener) : 
+			    m_mapValues(DefLessFunc(const K)), 
+			    m_vecListeners(1)
 			{
 				m_vecListeners.AddToTail(pFirstListener);
 			}
 
 		public:
 			using OnCollectorChangedCallback_t = std::function<void (const K &, const V &)>;
-			using OnCollectorChangedCallbackShared_t = std::shared_ptr<OnCollectorChangedCallback_t>;
 
-			class CollectorChangedSharedCallback
+			class CListenerCallbacksCollector : public IListener
 			{
 			public:
-				CollectorChangedSharedCallback()
-				 :  m_pCallback(std::make_shared<OnCollectorChangedCallback_t>(nullptr))
-				{
-				}
-
-				CollectorChangedSharedCallback(const OnCollectorChangedCallbackShared_t &funcSharedCallback)
-				 :  m_pCallback(funcSharedCallback)
-				{
-				}
-
-				CollectorChangedSharedCallback(const OnCollectorChangedCallback_t &funcCallback)
-				 :  m_pCallback(std::make_shared<OnCollectorChangedCallback_t>(funcCallback))
-				{
-				}
-
-				operator OnCollectorChangedCallbackShared_t() const
-				{
-					return m_pCallback;
-				}
-
-				operator OnCollectorChangedCallback_t() const
-				{
-					return *m_pCallback;
-				}
-
-			private:
-				OnCollectorChangedCallbackShared_t m_pCallback;
-			}; // GameData::Config::Storage::CollectorChangedSharedCallback
-
-			template<typename T>
-			class BaseListenerCollector : public IListener
-			{
-			private:
-				using Base = IListener; // Root interface.
-
-			public:
-				BaseListenerCollector()
-				 :  m_mapCallbacks(DefLessFunc(const K))
-				{
-				}
-
-			public:
-				virtual void Insert(const K &aKey, const CollectorChangedSharedCallback &funcCallback) = 0;
-				virtual bool Remove(const K &aKey) = 0;
-
-				virtual void RemoveAll()
-				{
-					m_mapCallbacks.Purge();
-				}
-
-			protected:
-				CUtlMap<K, T> m_mapCallbacks;
-			}; // GameData::Config::Storage::BaseListenerCollector
-
-			class ListenerCallbacksCollector : public BaseListenerCollector<CollectorChangedSharedCallback>
-			{
-			private:
-				using Base = BaseListenerCollector<CollectorChangedSharedCallback>;
-				using Base::m_mapCallbacks;
-
-			public:
-				ListenerCallbacksCollector() = default;
-
-			public: // BaseListenerCollector<>
-				void Insert(const K &aKey, const CollectorChangedSharedCallback &funcCallback) override
-				{
-					m_mapCallbacks.InsertOrReplace(aKey, funcCallback);
-				}
-
-				bool Remove(const K &aKey) override
-				{
-					auto &map = m_mapCallbacks;
-
-					auto iFound = map.Find(aKey);
-
-					bool bResult = IS_VALID_GAMEDATA_INDEX(map, iFound);
-
-					if(bResult)
-					{
-						map.RemoveAt(iFound);
-					}
-
-					return bResult;
-				}
+				CListenerCallbacksCollector() : m_mapCallbacks(DefLessFunc(const K)) {}
 
 			public: // IListener
-				void OnChanged(const K &aKey, const V &aValue) override
+				void OnChanged(const K &aKey, const V &aValue)
 				{
 					auto &map = m_mapCallbacks;
 
@@ -245,70 +158,19 @@ namespace GameData
 
 					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
 					{
-						OnCollectorChangedCallback_t it = map.Element(iFound);
+						OnCollectorChangedCallback_t &it = map.Element(iFound);
 
 						it(aKey, aValue);
 					}
 				}
-			}; // GameData::Config::Storage::ListenerCallbacksCollector
-
-			using ListenerMultipleCallbacksCollectorVector = CUtlVector<CollectorChangedSharedCallback>;
-
-			class ListenerMultipleCallbacksCollector : public BaseListenerCollector<ListenerMultipleCallbacksCollectorVector>
-			{
-			private:
-				using BaseVector = ListenerMultipleCallbacksCollectorVector;
-				using Base = BaseListenerCollector<BaseVector>;
-				using Base::m_mapCallbacks;
 
 			public:
-				ListenerMultipleCallbacksCollector() = default;
-
-				// Adapter.
-				void Insert(const K &aKey, const BaseVector &vecCallbacks) override
+				void Insert(const K &aKey, OnCollectorChangedCallback_t &&funcCallback)
 				{
-					auto &map = m_mapCallbacks;
-
-					auto iFound = map.Find(aKey);
-
-					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
-					{
-						auto &it = map.Element(iFound);
-
-						it.AddVectorToTail(vecCallbacks);
-					}
-					else
-					{
-						BaseVector vecNewOne;
-
-						vecNewOne.AddVectorToTail(vecCallbacks);
-						map.Insert(vecNewOne);
-					}
+					m_mapCallbacks.InsertOrReplace(aKey, Move(funcCallback));
 				}
 
-			public: // BaseListenerCollector<>
-				void Insert(K aKey, const ListenerCallbacksCollector &funcCallback) override
-				{
-					auto &map = m_mapCallbacks;
-
-					auto iFound = map.Find(aKey);
-
-					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
-					{
-						auto &it = map.Element(iFound);
-
-						it.AddToTail(funcCallback);
-					}
-					else
-					{
-						BaseVector vecNewOne;
-
-						vecNewOne.AddToTail(funcCallback);
-						map.Insert(vecNewOne);
-					}
-				}
-
-				bool Remove(K aKey)
+				bool Remove(const K &aKey)
 				{
 					auto &map = m_mapCallbacks;
 
@@ -323,6 +185,19 @@ namespace GameData
 
 					return bResult;
 				}
+				void RemoveAll() { m_mapCallbacks.Purge(); }
+
+			private:
+				CUtlMap<K, OnCollectorChangedCallback_t> m_mapCallbacks;
+			}; // GameData::Config::Storage::CListenerCallbacksCollector
+
+			class CListenerMultipleCollector : public IListener
+			{
+			private:
+				using Callbacks_t = CUtlVector<OnCollectorChangedCallback_t>;
+
+			public:
+				CListenerMultipleCollector() : m_mapCallbacks(DefLessFunc(const K)) {}
 
 			public: // IListener
 				void OnChanged(const K &aKey, const V &aValue) override
@@ -337,23 +212,80 @@ namespace GameData
 
 					FOR_EACH_VEC(itVec, i)
 					{
-						OnCollectorChangedCallback_t it = itVec[i];
+						OnCollectorChangedCallback_t &it = itVec[i];
 
 						it(aKey, aValue);
 					}
 				}
-			}; // GameData::Config::Storage::ListenerMultipleCallbacksCollector
-		
-		public:
-			void ClearValues()
-			{
-				m_mapValues.Purge();
-			}
 
-			void ClearListeners()
-			{
-				m_vecListeners.Purge();
-			}
+			public:
+				// Adapter.
+				virtual void Insert(const K &aKey, Callbacks_t &&vecCallbacks)
+				{
+					auto &map = m_mapCallbacks;
+
+					auto iFound = map.Find(aKey);
+
+					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
+					{
+						auto &it = map.Element(iFound);
+
+						it.AddVectorToTail(Move(vecCallbacks));
+					}
+					else
+					{
+						Callbacks_t vecElement;
+
+						vecElement.AddVectorToTail(Move(vecCallbacks));
+						map.Insert(Move(vecElement));
+					}
+				}
+
+				void Insert(const K &aKey, CListenerCallbacksCollector &&funcCallback)
+				{
+					auto &map = m_mapCallbacks;
+
+					auto iFound = map.Find(aKey);
+
+					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
+					{
+						auto &it = map.Element(iFound);
+
+						it.AddToTail(Move(funcCallback));
+					}
+					else
+					{
+						Callbacks_t vecElement;
+
+						vecElement.AddToTail(Move(funcCallback));
+						map.Insert(Move(vecElement));
+					}
+				}
+
+				bool Remove(const K &aKey)
+				{
+					auto &map = m_mapCallbacks;
+
+					auto iFound = map.Find(aKey);
+
+					bool bResult = IS_VALID_GAMEDATA_INDEX(map, iFound);
+
+					if(bResult)
+					{
+						map.RemoveAt(iFound);
+					}
+
+					return bResult;
+				}
+				void RemoveAll() { m_mapCallbacks.Purge(); }
+
+			private:
+				CUtlMap<K, Callbacks_t> m_mapCallbacks;
+			}; // GameData::Config::Storage::CListenerMultipleCollector
+
+		public:
+			void ClearValues() { m_mapValues.Purge(); }
+			void ClearListeners() { m_vecListeners.Purge(); }
 
 		public:
 			const V &operator[](const K &aKey) const
@@ -365,7 +297,7 @@ namespace GameData
 				return map.Element(iFound);
 			}
 
-			const V &Get(const K &aKey, const V &aDefaultValue = {}) const
+			const V &Get(const K &aKey, const V &aDefaultValue = V{}) const
 			{
 				auto &map = m_mapValues;
 
@@ -383,24 +315,11 @@ namespace GameData
 			}
 
 		public:
-			void Set(const K &aKey, const V &aValue)
+			void Set(const K &aKey, V &&aValue)
 			{
 				auto &map = m_mapValues;
 
-				auto iFound = map.Find(aKey);
-
-				if(IS_VALID_GAMEDATA_INDEX(m_mapValues, iFound))
-				{
-					auto &it = map.Element(iFound);
-
-					it = aValue;
-				}
-				else
-				{
-					map.Insert(aKey, aValue);
-				}
-
-				OnChanged(aKey, aValue);
+				OnChanged(aKey, map.Element(map.InsertOrReplace(aKey, Move(aValue))));
 			}
 
 		private:
@@ -415,11 +334,7 @@ namespace GameData
 			}
 
 		public:
-			virtual void AddListener(IListener *pListener)
-			{
-				m_vecListeners.AddToTail(pListener);
-			}
-
+			virtual void AddListener(IListener *pListener) { m_vecListeners.AddToTail(pListener); }
 			virtual bool RemoveListener(IListener *pListener)
 			{
 				auto &vec = m_vecListeners;
@@ -462,27 +377,16 @@ namespace GameData
 
 	public:
 		Config() = default;
-		explicit Config(const Addresses &aInitAddressStorage, const Keys &aInitKeysStorage, const Offsets &aInitOffsetsStorage);
+		explicit Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses &&aInitAddressStorage, Keys &&aInitKeysStorage, Offsets &&aInitOffsetsStorage);
 
 	public:
 		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages);
 		void ClearValues();
 
 	public:
-		Addresses &GetAddresses()
-		{
-			return m_aAddressStorage;
-		}
-
-		Keys &GetKeys()
-		{
-			return m_aKeysStorage;
-		}
-
-		Offsets &GetOffsets()
-		{
-			return m_aOffsetStorage;
-		}
+		Addresses &GetAddresses() { return m_aAddressStorage; }
+		Keys &GetKeys() { return m_aKeysStorage; }
+		Offsets &GetOffsets() { return m_aOffsetStorage; }
 
 	protected:
 		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);
@@ -496,47 +400,18 @@ namespace GameData
 		bool LoadEngineAddressActions(IGameData *pRoot, const char *pszAddressSection, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
 
 	public:
-		CUtlSymbolLarge GetSymbol(const char *pszText)
-		{
-			return m_aSymbolTable.AddString(pszText);
-		}
-
-		CUtlSymbolLarge FindSymbol(const char *pszText) const
-		{
-			return m_aSymbolTable.Find(pszText);
-		}
+		CUtlSymbolLarge GetSymbol(const char *pszText) { return m_aSymbolTable.AddString(pszText); }
+		CUtlSymbolLarge FindSymbol(const char *pszText) const { return m_aSymbolTable.Find(pszText); }
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const
-		{
-			return m_aAddressStorage.Get(sName);
-		}
-
-		const CUtlString &GetKey(const CUtlSymbolLarge &sName) const
-		{
-			return m_aKeysStorage.Get(sName);
-		}
-
-		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const
-		{
-			return m_aOffsetStorage.Get(sName);
-		}
+		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const { return m_aAddressStorage.Get(sName, DYNLIB_INVALID_MEMORY); }
+		const CUtlString &GetKey(const CUtlSymbolLarge &sName) const { return m_aKeysStorage.Get(sName, StringFuncs<char>::EmptyString()); }
+		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const { return m_aOffsetStorage.Get(sName, -1); }
 
 	protected:
-		void SetAddress(const CUtlSymbolLarge &sName, const DynLibUtils::CMemory &aMemory)
-		{
-			m_aAddressStorage.Set(sName, aMemory);
-		}
-
-		void SetKey(const CUtlSymbolLarge &sName, const CUtlString &sValue)
-		{
-			m_aKeysStorage.Set(sName, sValue);
-		}
-
-		void SetOffset(const CUtlSymbolLarge &sName, const ptrdiff_t &nValue)
-		{
-			m_aOffsetStorage.Set(sName, nValue);
-		}
+		void SetAddress(const CUtlSymbolLarge &sName, DynLibUtils::CMemory aMemory) { m_aAddressStorage.Set(sName, Move(aMemory)); }
+		void SetKey(const CUtlSymbolLarge &sName, CUtlString sValue) { m_aKeysStorage.Set(sName, Move(sValue)); }
+		void SetOffset(const CUtlSymbolLarge &sName, ptrdiff_t nValue) { m_aOffsetStorage.Set(sName, Move(nValue)); }
 
 	private:
 		CUtlSymbolTableLarge_CI m_aSymbolTable;
