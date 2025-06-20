@@ -119,7 +119,7 @@ ptrdiff_t GameData::ReadOffset(const char *pszValue)
 	return static_cast<ptrdiff_t>(strtol(pszValue, NULL, 0));
 }
 
-GameData::Config::Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses &&aAddressStorage, Keys &&aKeysStorage, Offsets &&aOffsetsStorage)
+GameData::Config::Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses_t &&aAddressStorage, Keys_t &&aKeysStorage, Offsets_t &&aOffsetsStorage)
  :  m_aSymbolTable(Move(aSymbolTable)),
     m_aAddressStorage(Move(aAddressStorage)), 
     m_aKeysStorage(Move(aKeysStorage)), 

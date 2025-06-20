@@ -371,22 +371,22 @@ namespace GameData
 		}; // GameData::Config::Storage
 
 	public:
-		using Addresses = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
-		using Keys = Storage<CUtlSymbolLarge, CUtlString>;
-		using Offsets = Storage<CUtlSymbolLarge, ptrdiff_t>;
+		using Addresses_t = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
+		using Keys_t = Storage<CUtlSymbolLarge, CUtlString>;
+		using Offsets_t = Storage<CUtlSymbolLarge, ptrdiff_t>;
 
 	public:
 		Config() = default;
-		explicit Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses &&aInitAddressStorage, Keys &&aInitKeysStorage, Offsets &&aInitOffsetsStorage);
+		explicit Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses_t &&aAddressStorage, Keys_t &&aKeysStorage, Offsets_t &&aOffsetsStorage);
 
 	public:
 		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages);
 		void ClearValues();
 
 	public:
-		Addresses &GetAddresses() { return m_aAddressStorage; }
-		Keys &GetKeys() { return m_aKeysStorage; }
-		Offsets &GetOffsets() { return m_aOffsetStorage; }
+		Addresses_t &GetAddresses() { return m_aAddressStorage; }
+		Keys_t &GetKeys() { return m_aKeysStorage; }
+		Offsets_t &GetOffsets() { return m_aOffsetStorage; }
 
 	protected:
 		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);
@@ -416,9 +416,9 @@ namespace GameData
 	private:
 		CUtlSymbolTableLarge_CI m_aSymbolTable;
 
-		Addresses m_aAddressStorage;
-		Keys m_aKeysStorage;
-		Offsets m_aOffsetStorage;
+		Addresses_t m_aAddressStorage;
+		Keys_t m_aKeysStorage;
+		Offsets_t m_aOffsetStorage;
 	}; // GameData::Config
 }; // GameData
 
