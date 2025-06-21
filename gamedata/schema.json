@@ -112,16 +112,22 @@
 							{
 								"win64":
 								{
+									"description": "A key value on Windows side",
+
 									"type": ["null", "boolean", "number", "string", "array", "object"]
 								},
 
 								"linuxsteamrt64":
 								{
+									"description": "A key value on Linux side",
+
 									"type": ["null", "boolean", "number", "string", "array", "object"]
 								},
 
 								"osx64":
 								{
+									"description": "A key value on macOS side",
+
 									"type": ["null", "boolean", "number", "string", "array", "object"]
 								}
 							}
