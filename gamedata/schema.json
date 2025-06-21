@@ -112,17 +112,17 @@
 							{
 								"win64":
 								{
-									"type": "string"
+									"type": ["null", "boolean", "number", "string", "array", "object"]
 								},
 
 								"linuxsteamrt64":
 								{
-									"type": "string"
+									"type": ["null", "boolean", "number", "string", "array", "object"]
 								},
 
 								"osx64":
 								{
-									"type": "string"
+									"type": ["null", "boolean", "number", "string", "array", "object"]
 								}
 							}
 						}

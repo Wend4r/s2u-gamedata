@@ -321,9 +321,9 @@ bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues,
 
 		const char *pszKeyName = pKeysValues->GetMemberName(i);
 
-		KeyValues3 *pPlatformValues = pKeySection->FindMember(aPlatformMemberName);
+		KeyValues3 *pPlatformKV = pKeySection->FindMember(aPlatformMemberName);
 
-		if(!pPlatformValues)
+		if(!pPlatformKV)
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "get ", " platform ", "(\"", pszPlatformKey, "\" key)", "at \"", pszKeyName, "\""};
 
@@ -333,7 +333,7 @@ bool GameData::Config::LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues,
 			continue;
 		}
 
-		SetKey(GetSymbol(pszKeyName), pPlatformValues->GetString());
+		SetKey(GetSymbol(pszKeyName), Move(*pPlatformKV));
 
 		i++;
 	}

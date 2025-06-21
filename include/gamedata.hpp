@@ -372,7 +372,7 @@ namespace GameData
 
 	public:
 		using Addresses_t = Storage<CUtlSymbolLarge, DynLibUtils::CMemory>;
-		using Keys_t = Storage<CUtlSymbolLarge, CUtlString>;
+		using Keys_t = Storage<CUtlSymbolLarge, KeyValues3>;
 		using Offsets_t = Storage<CUtlSymbolLarge, ptrdiff_t>;
 
 	public:
@@ -405,12 +405,12 @@ namespace GameData
 
 	public:
 		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const { return m_aAddressStorage.Get(sName, DYNLIB_INVALID_MEMORY); }
-		const CUtlString &GetKey(const CUtlSymbolLarge &sName) const { return m_aKeysStorage.Get(sName, StringFuncs<char>::EmptyString()); }
+		const KeyValues3 &GetKey(const CUtlSymbolLarge &sName) const { return m_aKeysStorage.Get(sName, KeyValues3(KV3_TYPEEX_INVALID)); }
 		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const { return m_aOffsetStorage.Get(sName, -1); }
 
 	protected:
 		void SetAddress(const CUtlSymbolLarge &sName, DynLibUtils::CMemory aMemory) { m_aAddressStorage.Set(sName, Move(aMemory)); }
-		void SetKey(const CUtlSymbolLarge &sName, CUtlString sValue) { m_aKeysStorage.Set(sName, Move(sValue)); }
+		void SetKey(const CUtlSymbolLarge &sName, KeyValues3 &&kv) { m_aKeysStorage.Set(sName, Move(kv)); }
 		void SetOffset(const CUtlSymbolLarge &sName, ptrdiff_t nValue) { m_aOffsetStorage.Set(sName, Move(nValue)); }
 
 	private:
