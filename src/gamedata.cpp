@@ -167,6 +167,10 @@ bool GameData::Config::LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, C
 			&GameData::Config::LoadEngineSignatures
 		},
 		{
+			"VTables",
+			&GameData::Config::LoadEngineVTables
+		},
+		{
 			"Keys",
 			&GameData::Config::LoadEngineKeys
 		},
@@ -277,7 +281,7 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 
 		const auto pSigResult = pLibModule->FindPattern(DynLibUtils::ParsePattern(pszSignature)); // Hot!
 
-		if(!pSigResult)
+		if(!pSigResult.IsValid())
 		{
 			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszSigName, "\" by", "\"", pszSignature, "\" signature" };
 
@@ -288,6 +292,90 @@ bool GameData::Config::LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSigna
 		}
 
 		SetAddress(GetSymbol(pszSigName), pSigResult);
+
+		i++;
+	}
+	while(i < nMemberCount);
+
+	return true;
+}
+
+bool GameData::Config::LoadEngineVTables(IGameData *pRoot, KeyValues3 *pVTableValues, CBufferStringVector &vecMessages)
+{
+	int nMemberCount = pVTableValues->GetMemberCount();
+
+	if(!nMemberCount)
+	{
+		vecMessages.AddToTail("Section is empty");
+
+		return false;
+	}
+
+	KV3MemberId_t i = 0;
+
+	const auto &aLibraryMemberName = s_aLibraryMemberName;
+
+	const char *pszLibraryKey = aLibraryMemberName.GetString();
+
+	do
+	{
+		KeyValues3 *pData = pVTableValues->GetMember(i);
+
+		const char *pszVTableKey = pVTableValues->GetMemberName(i);
+
+		KeyValues3 *pLibraryValues = pData->FindMember(aLibraryMemberName);
+
+		if(!pLibraryValues)
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", pszLibraryKey, "\" key ", "at \"", pszVTableKey, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		const char *pszLibraryName = pLibraryValues->GetString("<none>");
+
+		const auto *pLibModule = pRoot->FindLibrary(pszLibraryName);
+
+		if(!pLibModule)
+		{
+			const char *pszMessageConcat[] = {"Unknown \"", pszLibraryName, "\" library ", "at \"", pszVTableKey, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		KeyValues3 *pVTableNameKV = pData->FindMember("name");
+
+		if(!pVTableNameKV)
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", "name", "\" key ", "at \"", pszVTableKey, "\""};
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		const char *pszName = pVTableNameKV->GetString();
+
+		const auto pResult = pLibModule->GetVirtualTableByName(pszName);
+
+		if(!pResult.IsValid())
+		{
+			const char *pszMessageConcat[] = {"Failed to ", "find ", "\"", pszVTableKey, "\" by", "\"", pszName, "\" vtable" };
+
+			vecMessages.AddToTail(pszMessageConcat);
+			i++;
+
+			continue;
+		}
+
+		SetAddress(GetSymbol(pszVTableKey), pResult);
 
 		i++;
 	}

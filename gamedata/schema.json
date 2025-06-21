@@ -194,7 +194,7 @@
 							{
 								"library":
 								{
-									"description": "Library shared name",
+									"description": "The shared library name",
 
 									"type": "string"
 								},
@@ -216,6 +216,42 @@
 								"osx64":
 								{
 									"description": "A signature bytes string on macOS side. Passes ? to skip a byte",
+
+									"type": "string"
+								}
+							},
+
+							"required": ["library"]
+						}
+					}
+				},
+
+				"VTables":
+				{
+					"description": "Virtual tables section",
+
+					"type": "object",
+
+					"patternProperties":
+					{
+						"^.*$":
+						{
+							"description": "A virtual table key",
+
+							"type": "object",
+
+							"properties":
+							{
+								"library":
+								{
+									"description": "The shared library name",
+
+									"type": "string"
+								},
+
+								"name":
+								{
+									"description": "A virtual table name",
 
 									"type": "string"
 								}

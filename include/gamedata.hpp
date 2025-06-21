@@ -392,6 +392,7 @@ namespace GameData
 		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);
 
 		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages);
+		bool LoadEngineVTables(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages);
 		bool LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues, CBufferStringVector &vecMessages);
 		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages);
 
