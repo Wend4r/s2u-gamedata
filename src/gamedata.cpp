@@ -351,17 +351,7 @@ bool GameData::Config::LoadEngineVTables(IGameData *pRoot, KeyValues3 *pVTableVa
 
 		KeyValues3 *pVTableNameKV = pData->FindMember("name");
 
-		if(!pVTableNameKV)
-		{
-			const char *pszMessageConcat[] = {"Failed to ", "get ", "\"", "name", "\" key ", "at \"", pszVTableKey, "\""};
-
-			vecMessages.AddToTail(pszMessageConcat);
-			i++;
-
-			continue;
-		}
-
-		const char *pszName = pVTableNameKV->GetString();
+		const char *pszName = (pVTableNameKV && pVTableNameKV->IsString()) ? pVTableNameKV->GetString() : pszVTableKey;
 
 		const auto pResult = pLibModule->GetVirtualTableByName(pszName);
 
