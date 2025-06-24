@@ -80,7 +80,7 @@ public:
 
 namespace GameData
 {
-	using CBufferStringVector = CUtlVector<CBufferString>;
+	using CStringVector = CUtlVector<CUtlString>;
 
 	static const CKV3MemberName &GetSourceEngineMemberName();
 
@@ -380,7 +380,7 @@ namespace GameData
 		explicit Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses_t &&aAddressStorage, Keys_t &&aKeysStorage, Offsets_t &&aOffsetsStorage);
 
 	public:
-		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CBufferStringVector &vecMessages);
+		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CStringVector &vecMessages);
 		void ClearValues();
 
 	public:
@@ -389,16 +389,16 @@ namespace GameData
 		Offsets_t &GetOffsets() { return m_aOffsetStorage; }
 
 	protected:
-		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CBufferStringVector &vecMessages);
+		bool LoadEngine(IGameData *pRoot, KeyValues3 *pEngineValues, CStringVector &vecMessages);
 
-		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages);
-		bool LoadEngineVTables(IGameData *pRoot, KeyValues3 *pSignaturesValues, CBufferStringVector &vecMessages);
-		bool LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues, CBufferStringVector &vecMessages);
-		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CBufferStringVector &vecMessages);
+		bool LoadEngineSignatures(IGameData *pRoot, KeyValues3 *pSignaturesValues, CStringVector &vecMessages);
+		bool LoadEngineVTables(IGameData *pRoot, KeyValues3 *pSignaturesValues, CStringVector &vecMessages);
+		bool LoadEngineKeys(IGameData *pRoot, KeyValues3 *pKeysValues, CStringVector &vecMessages);
+		bool LoadEngineOffsets(IGameData *pRoot, KeyValues3 *pOffsetsValues, CStringVector &vecMessages);
 
 		// Step #2 - addresses.
-		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CBufferStringVector &vecMessages);
-		bool LoadEngineAddressActions(IGameData *pRoot, const char *pszAddressSection, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CBufferStringVector &vecMessages);
+		bool LoadEngineAddresses(IGameData *pRoot, KeyValues3 *pAddressesValues, CStringVector &vecMessages);
+		bool LoadEngineAddressActions(IGameData *pRoot, const char *pszAddressSection, uintptr_t &pAddrCur, KeyValues3 *pActionValues,  CStringVector &vecMessages);
 
 	public:
 		CUtlSymbolLarge GetSymbol(const char *pszText) { return m_aSymbolTable.AddString(pszText); }
