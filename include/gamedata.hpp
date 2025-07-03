@@ -38,6 +38,7 @@
 #	include <tier1/utlrbtree.h>
 #	include <tier1/utlvector.h>
 #	include <tier1/keyvalues3.h>
+#	include <tier1/smartptr.h>
 
 #	define MAX_GAMEDATA_SECTION_MESSAGE_LENGTH 256
 #	define MAX_GAMEDATA_ENGINE_ADDRESSES_SECTION_MESSAGE_LENGTH MAX_GAMEDATA_SECTION_MESSAGE_LENGTH
@@ -143,6 +144,7 @@ namespace GameData
 
 		public:
 			using OnCollectorChangedCallback_t = std::function<void (const K &, const V &)>;
+			using OnCollectorChangedSmartCallback_t = CSmartPtr<OnCollectorChangedCallback_t, CNullRefCountAccessor>;
 
 			class CListenerCallbacksCollector : public IListener
 			{
@@ -158,16 +160,16 @@ namespace GameData
 
 					if(IS_VALID_GAMEDATA_INDEX(map, iFound))
 					{
-						OnCollectorChangedCallback_t &it = map.Element(iFound);
+						auto &pCallback = map.Element(iFound);
 
-						it(aKey, aValue);
+						(*pCallback)(aKey, aValue);
 					}
 				}
 
 			public:
-				void Insert(const K &aKey, OnCollectorChangedCallback_t &&funcCallback)
+				void Insert(const K &aKey, OnCollectorChangedSmartCallback_t &&pCallback)
 				{
-					m_mapCallbacks.InsertOrReplace(aKey, Move(funcCallback));
+					m_mapCallbacks.InsertOrReplace(aKey, Move(pCallback));
 				}
 
 				bool Remove(const K &aKey)
@@ -188,13 +190,13 @@ namespace GameData
 				void RemoveAll() { m_mapCallbacks.Purge(); }
 
 			private:
-				CUtlMap<K, OnCollectorChangedCallback_t> m_mapCallbacks;
+				CUtlMap<K, OnCollectorChangedSmartCallback_t> m_mapCallbacks;
 			}; // GameData::Config::Storage::CListenerCallbacksCollector
 
 			class CListenerMultipleCollector : public IListener
 			{
 			private:
-				using Callbacks_t = CUtlVector<OnCollectorChangedCallback_t>;
+				using Callbacks_t = CUtlVector<OnCollectorChangedSmartCallback_t>;
 
 			public:
 				CListenerMultipleCollector() : m_mapCallbacks(DefLessFunc(const K)) {}
@@ -212,7 +214,7 @@ namespace GameData
 
 					FOR_EACH_VEC(itVec, i)
 					{
-						OnCollectorChangedCallback_t &it = itVec[i];
+						OnCollectorChangedSmartCallback_t &it = itVec[i];
 
 						it(aKey, aValue);
 					}
