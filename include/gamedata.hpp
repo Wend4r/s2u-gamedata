@@ -379,7 +379,6 @@ namespace GameData
 
 	public:
 		Config() = default;
-		explicit Config(CUtlSymbolTableLarge_CI &&aSymbolTable, Addresses_t &&aAddressStorage, Keys_t &&aKeysStorage, Offsets_t &&aOffsetsStorage);
 
 	public:
 		bool Load(IGameData *pRoot, KeyValues3 *pGameConfig, CStringVector &vecMessages);
