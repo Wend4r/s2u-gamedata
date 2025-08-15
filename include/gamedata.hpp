@@ -403,7 +403,7 @@ namespace GameData
 
 	public:
 		CUtlSymbolLarge GetSymbol(const char *pszText) { return m_aSymbolTable.AddString(pszText); }
-		CUtlSymbolLarge FindSymbol(const char *pszText) const { return m_aSymbolTable.Find(pszText); }
+		CUtlSymbolLarge FindSymbol(const char *pszText) const { return m_aSymbolTable.FindString(pszText); }
 
 	public:
 		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const { return m_aAddressStorage.Get(sName, DYNLIB_INVALID_MEMORY); }
