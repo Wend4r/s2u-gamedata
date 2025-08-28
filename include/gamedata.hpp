@@ -290,7 +290,7 @@ namespace GameData
 			void ClearListeners() { m_vecListeners.Purge(); }
 
 		public:
-			const V &operator[](const K &aKey) const
+			V operator[](const K &aKey) const
 			{
 				auto &map = m_mapValues;
 
@@ -299,13 +299,13 @@ namespace GameData
 				return map.Element(iFound);
 			}
 
-			const V &Get(const K &aKey, const V &aDefaultValue = V{}) const
+			V Get(const K &aKey, const V &aDefaultValue = V{}) const
 			{
 				auto &map = m_mapValues;
 
 				auto iFound = map.Find(aKey);
 
-				return IS_VALID_GAMEDATA_INDEX(m_mapValues, iFound) ? map.Element(iFound) : aDefaultValue;
+				return IS_VALID_GAMEDATA_INDEX(m_mapValues, iFound) ? map.Element(iFound) : V(aDefaultValue);
 			}
 
 			void TriggerCallbacks()
@@ -406,9 +406,9 @@ namespace GameData
 		CUtlSymbolLarge FindSymbol(const char *pszText) const { return m_aSymbolTable.FindString(pszText); }
 
 	public:
-		const DynLibUtils::CMemory &GetAddress(const CUtlSymbolLarge &sName) const { return m_aAddressStorage.Get(sName, DYNLIB_INVALID_MEMORY); }
-		const KeyValues3 &GetKey(const CUtlSymbolLarge &sName) const { return m_aKeysStorage.Get(sName, KeyValues3(KV3_TYPEEX_INVALID)); }
-		const ptrdiff_t &GetOffset(const CUtlSymbolLarge &sName) const { return m_aOffsetStorage.Get(sName, -1); }
+		DynLibUtils::CMemory GetAddress(const CUtlSymbolLarge &sName) const { return m_aAddressStorage.Get(sName, DYNLIB_INVALID_MEMORY); }
+		KeyValues3 GetKey(const CUtlSymbolLarge &sName) const { return m_aKeysStorage.Get(sName, KeyValues3(KV3_TYPEEX_INVALID)); }
+		ptrdiff_t GetOffset(const CUtlSymbolLarge &sName) const { return m_aOffsetStorage.Get(sName, -1); }
 
 	protected:
 		void SetAddress(const CUtlSymbolLarge &sName, DynLibUtils::CMemory aMemory) { m_aAddressStorage.Set(sName, Move(aMemory)); }
